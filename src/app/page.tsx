@@ -3,14 +3,17 @@ import type { ProjectData } from '@/services/cloud-sql';
 import Header from '@/components/layout/Header';
 import Leaderboard from '@/components/Leaderboard/Leaderboard';
 import CityPerformance from '@/components/CityView/CityPerformance';
-import { Award, BarChart3, Building, ChevronRight, Home, Trophy } from 'lucide-react';
+import { Award, BarChart3, Building, ChevronRight, Home as HomeIcon, Trophy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 export default async function Home() {
   const projectData: ProjectData[] = await getProjectData();
 
-  // Sort data by run_rate descending to determine rankings
-  const sortedData = [...projectData].sort((a, b) => b.run_rate - a.run_rate);
+  // Add rank to the data based on sorting
+  const sortedData = [...projectData]
+    .sort((a, b) => b.run_rate - a.run_rate)
+    .map((item, index) => ({ ...item, rank: index + 1 }));
+
   const topPerformers = sortedData.slice(0, 5);
   const podiumPerformers = sortedData.slice(0, 3);
 
@@ -22,7 +25,7 @@ export default async function Home() {
           <ol className="flex items-center space-x-2 text-sm text-muted-foreground">
             <li>
               <a href="#" className="hover:text-foreground flex items-center">
-                <Home className="h-4 w-4 mr-1" />
+                <HomeIcon className="h-4 w-4 mr-1" />
                 Dashboard
               </a>
             </li>
@@ -57,7 +60,7 @@ export default async function Home() {
           <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
             <Building className="text-accent" /> City Performance
           </h2>
-           <CityPerformance data={projectData} />
+           <CityPerformance data={sortedData} /> {/* Pass sorted data with rank */}
         </section>
 
          <Separator className="my-8"/>

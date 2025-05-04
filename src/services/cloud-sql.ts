@@ -22,16 +22,24 @@ export interface ProjectData {
    * The timestamp of the last data update.
    */
   last_updated: string;
+  /**
+   * The rank of the project based on performance metrics (e.g., run_rate).
+   * Added dynamically after sorting.
+   */
+  rank?: number;
 }
 
 /**
  * Asynchronously retrieves project data from Google Cloud SQL.
+ * This function currently returns mock data.
  *
- * @returns A promise that resolves to an array of ProjectData objects.
+ * @returns A promise that resolves to an array of ProjectData objects (without rank initially).
  */
-export async function getProjectData(): Promise<ProjectData[]> {
+export async function getProjectData(): Promise<Omit<ProjectData, 'rank'>[]> {
   // TODO: Implement this by calling the Google Cloud SQL API.
 
+  // Returning mock data without the rank property.
+  // The rank will be added later after sorting in the consuming component.
   return [
     {
       project_id: '123',

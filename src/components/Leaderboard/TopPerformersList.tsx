@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface TopPerformersListProps {
-  performers: ProjectData[];
+  performers: (ProjectData & { rank: number })[]; // Expect data with rank property
 }
 
 const getRankColor = (rank: number): string => {
@@ -33,10 +33,10 @@ const getRagIndicator = (ragStatus: string): React.ReactNode => {
 const TopPerformersList: React.FC<TopPerformersListProps> = ({ performers }) => {
   return (
     <ul className="space-y-4">
-      {performers.map((performer, index) => (
-        <li key={performer.project_id} className="flex items-center space-x-3 p-2 hover:bg-accent/50 rounded-md transition-colors duration-150">
-           <span className={cn("font-bold text-lg w-6 text-center", getRankColor(index + 1))}>
-              {index < 3 ? <Trophy className={cn("h-5 w-5 inline-block", getRankColor(index + 1))} /> : index + 1}
+      {performers.map((performer) => (
+        <li key={performer.project_id} className="flex items-center space-x-3 p-2 hover:bg-accent/10 rounded-md transition-colors duration-150">
+           <span className={cn("font-bold text-lg w-6 text-center", getRankColor(performer.rank))}>
+              {performer.rank <= 3 ? <Trophy className={cn("h-5 w-5 inline-block", getRankColor(performer.rank))} /> : performer.rank}
            </span>
           <Avatar className="h-9 w-9">
              {/* Placeholder Avatar - replace with actual images if available */}
@@ -45,16 +45,17 @@ const TopPerformersList: React.FC<TopPerformersListProps> = ({ performers }) => 
           <div className="flex-1 space-y-1">
             <p className="text-sm font-medium leading-none">{performer.city}</p>
             <div className="flex items-center space-x-2">
-               <Progress value={performer.run_rate} className="h-2 w-[100px]" indicatorClassName={
+               <Progress value={performer.run_rate} className="h-2 w-[100px]" indicatorClassName={cn(
+                   'transition-all duration-300', // Base class for progress indicator
                    performer.rag_status === 'Green' ? 'bg-green-500' :
                    performer.rag_status === 'Amber' ? 'bg-yellow-500' : 'bg-red-500'
-               } />
+               )} />
                 <span className="text-xs text-muted-foreground">{performer.run_rate}%</span>
             </div>
           </div>
-           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+           <div className="flex items-center space-x-1 text-xs text-muted-foreground ml-auto min-w-[60px] justify-end">
                 {getRagIndicator(performer.rag_status)}
-                <span>{performer.rag_status}</span>
+                <span className="font-medium">{performer.rag_status}</span>
            </div>
         </li>
       ))}

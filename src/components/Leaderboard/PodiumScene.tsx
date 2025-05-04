@@ -6,7 +6,7 @@ import type { ProjectData } from '@/services/cloud-sql';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PodiumSceneProps {
-  performers: ProjectData[];
+  performers: (ProjectData & { rank: number })[]; // Expect data with rank property
 }
 
 const PodiumScene: React.FC<PodiumSceneProps> = ({ performers }) => {
@@ -71,15 +71,22 @@ const PodiumScene: React.FC<PodiumSceneProps> = ({ performers }) => {
     const materials = [goldMaterial, silverMaterial, bronzeMaterial];
     const heights = [1.5, 1.2, 0.9]; // Heights for 1st, 2nd, 3rd
     const positions = [
-        { x: 0, y: heights[0] / 2, z: 0 },  // 1st place (center)
+        { x: 0, y: heights[0] / 2, z: 0 },    // 1st place (center)
         { x: -1.2, y: heights[1] / 2, z: 0 }, // 2nd place (left)
         { x: 1.2, y: heights[2] / 2, z: 0 }   // 3rd place (right)
     ];
     const labels = ['1st', '2nd', '3rd'];
 
-    performers.slice(0, 3).forEach((performer, index) => {
-        const podiumIndex = performer.rank === 1 ? 0 : performer.rank === 2 ? 1 : 2; // Map rank to podium position index
-        if (podiumIndex > 2) return; // Ensure only top 3
+    performers.forEach((performer) => {
+        const rankIndex = performer.rank - 1; // 0 for rank 1, 1 for rank 2, etc.
+        if (rankIndex > 2) return; // Ensure only top 3
+
+        // Map rank to specific podium step (1st=center, 2nd=left, 3rd=right)
+        let podiumIndex;
+        if (performer.rank === 1) podiumIndex = 0;
+        else if (performer.rank === 2) podiumIndex = 1;
+        else if (performer.rank === 3) podiumIndex = 2;
+        else return; // Should not happen if sliced correctly, but good practice
 
         const geometry = new THREE.BoxGeometry(1, heights[podiumIndex], 1);
         const podiumMesh = new THREE.Mesh(geometry, materials[podiumIndex]);
@@ -88,7 +95,7 @@ const PodiumScene: React.FC<PodiumSceneProps> = ({ performers }) => {
         podiumMesh.receiveShadow = true;
         podiumMesh.userData = { // Store performer data for interaction
             type: 'podium',
-            tooltip: `${performer.city} (${labels[podiumIndex]}) - Run Rate: ${performer.run_rate}`,
+            tooltip: `${performer.city} (${labels[podiumIndex]}) - Run Rate: ${performer.run_rate}%`,
             rank: performer.rank
         };
         podiumGroup.add(podiumMesh);
@@ -136,6 +143,13 @@ const PodiumScene: React.FC<PodiumSceneProps> = ({ performers }) => {
         const intersects = raycasterRef.current.intersectObjects(podiumGroupRef.current.children);
 
         let foundTooltip = false;
+        // Reset scale before checking for new hover
+         podiumGroupRef.current.children.forEach(child => {
+             if (child instanceof THREE.Mesh && child.userData.type === 'podium') {
+                 child.scale.set(1, 1, 1); // Reset scale
+             }
+         });
+
         if (intersects.length > 0) {
             const firstIntersect = intersects[0].object;
             if (firstIntersect.userData.type === 'podium') {
@@ -145,26 +159,21 @@ const PodiumScene: React.FC<PodiumSceneProps> = ({ performers }) => {
                 });
                 foundTooltip = true;
 
-                // Basic hover effect: slightly scale up
-                 podiumGroupRef.current.children.forEach(child => {
-                     if (child instanceof THREE.Mesh && child.userData.type === 'podium') {
-                         child.scale.set(1, 1, 1); // Reset scale
-                     }
-                 });
+                // Basic hover effect: slightly scale up the hovered item
                  if(firstIntersect instanceof THREE.Mesh){
                      firstIntersect.scale.set(1.05, 1.05, 1.05);
                  }
-
             }
         }
 
         if (!foundTooltip) {
+             setTooltipContent(null);
+             // Ensure all scales are reset if no tooltip is shown
              podiumGroupRef.current.children.forEach(child => {
                  if (child instanceof THREE.Mesh && child.userData.type === 'podium') {
                      child.scale.set(1, 1, 1); // Reset scale
                  }
              });
-             setTooltipContent(null);
         }
     };
     currentMount.addEventListener('mousemove', handleMouseMove);
@@ -173,8 +182,8 @@ const PodiumScene: React.FC<PodiumSceneProps> = ({ performers }) => {
     return () => {
       window.removeEventListener('resize', handleResize);
       currentMount.removeEventListener('mousemove', handleMouseMove);
-      if (rendererRef.current) {
-        currentMount.removeChild(rendererRef.current.domElement);
+      if (rendererRef.current && currentMount.contains(rendererRef.current.domElement)) {
+          currentMount.removeChild(rendererRef.current.domElement);
       }
       // Dispose Three.js objects
       sceneRef.current?.traverse(object => {
@@ -182,7 +191,7 @@ const PodiumScene: React.FC<PodiumSceneProps> = ({ performers }) => {
           object.geometry.dispose();
           if (Array.isArray(object.material)) {
             object.material.forEach(material => material.dispose());
-          } else {
+          } else if(object.material instanceof THREE.Material) { // Check if material is valid
             object.material.dispose();
           }
         }
@@ -194,10 +203,6 @@ const PodiumScene: React.FC<PodiumSceneProps> = ({ performers }) => {
       podiumGroupRef.current = null;
     };
   }, [performers]); // Re-run effect if performers change
-
-
-  // Add rank to performers data
-   const rankedPerformers = performers.map((p, index) => ({ ...p, rank: index + 1 }));
 
 
   return (
