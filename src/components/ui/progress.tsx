@@ -1,3 +1,4 @@
+// src/components/ui/progress.tsx
 "use client"
 
 import * as React from "react"
@@ -11,7 +12,6 @@ interface ProgressProps
   indicatorClassName?: string;
 }
 
-
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   ProgressProps // Use the extended props interface
@@ -19,14 +19,18 @@ const Progress = React.forwardRef<
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(
-      "relative h-4 w-full overflow-hidden rounded-full bg-muted", // Changed background to muted for better contrast
+      "relative h-4 w-full overflow-hidden rounded-full bg-muted", // Base styling
       className
     )}
     {...props}
   >
+    {/* Standard Shadcn Indicator */}
     <ProgressPrimitive.Indicator
-      className={cn("h-full w-full flex-1 bg-primary transition-all duration-500 ease-out", indicatorClassName)} // Apply indicatorClassName here
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      className={cn(
+          "h-full w-full flex-1 bg-primary transition-transform duration-500 ease-out", // Use transform transition
+          indicatorClassName
+      )}
+      style={{ transform: `translateX(-${100 - (value || 0)}%)` }} // Use transform for progress
     />
   </ProgressPrimitive.Root>
 ))
