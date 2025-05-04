@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import RAGIndicator from '@/components/shared/RAGIndicator';
 import CityBadge from '@/components/shared/CityBadge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, TrendingUp, TrendingDown, Minus, Trophy, Clock, User, AlertCircle, Users } from 'lucide-react'; // Added Users here
+import { Award, TrendingUp, TrendingDown, Minus, Trophy, Clock, User, AlertCircle, Users } from 'lucide-react'; // Ensure Users is imported
 import PodiumScene from '@/components/Leaderboard/PodiumScene';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
