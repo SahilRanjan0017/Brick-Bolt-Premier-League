@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import RAGIndicator from '@/components/shared/RAGIndicator';
 import CityBadge from '@/components/shared/CityBadge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, TrendingUp, TrendingDown, Minus, Trophy, Clock, User, AlertCircle } from 'lucide-react';
+import { Award, TrendingUp, TrendingDown, Minus, Trophy, Clock, User, AlertCircle, Users } from 'lucide-react'; // Added Users here
 import PodiumScene from '@/components/Leaderboard/PodiumScene';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -338,7 +338,10 @@ const LeaderboardPage: React.FC = () => {
              </h2>
             <Card className="h-[400px] lg:h-[450px] overflow-hidden shadow-lg border rounded-lg bg-gradient-to-br from-secondary/10 via-background to-background">
               <CardContent className="p-0 h-full w-full flex items-center justify-center">
-                  <PodiumScene performers={podiumPerformers} />
+                  {/* Ensure Suspense wraps the dynamic component */}
+                  <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                     <PodiumScene performers={podiumPerformers} />
+                  </Suspense>
               </CardContent>
             </Card>
          </section>
