@@ -89,3 +89,14 @@ export interface RewardDetails {
         annualConference: string;
     };
 }
+
+// Type for data passed to PodiumScene
+export interface PodiumPerformerData {
+    project_id?: string; // Optional project ID from Cloud SQL schema
+    id?: string;         // Optional ID from leaderboard data
+    city: string;
+    rag_status?: RagStatus | undefined; // Make rag_status optional
+    run_rate: number;
+    last_updated?: string; // Optional
+    rank: number;
+}

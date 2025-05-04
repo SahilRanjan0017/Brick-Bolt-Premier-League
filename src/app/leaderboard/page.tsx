@@ -2,6 +2,7 @@
 'use client'; // This page uses client-side hooks like useState and useEffect
 
 import React, { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { getLeaderboardData, getHistoricalWinners } from '@/services/api';
 import type { LeaderboardEntry, HistoricalWinner } from '@/types';
@@ -12,9 +13,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import RAGIndicator from '@/components/shared/RAGIndicator';
 import CityBadge from '@/components/shared/CityBadge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, TrendingUp, TrendingDown, Minus, Trophy, Clock, User, AlertCircle, Users } from 'lucide-react'; // Ensure Users is imported
-import PodiumScene from '@/components/Leaderboard/PodiumScene';
+import { Award, TrendingUp, TrendingDown, Minus, Trophy, Clock, User, AlertCircle, Users } from 'lucide-react';
+// import PodiumScene from '@/components/Leaderboard/PodiumScene'; // Import dynamically
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// Dynamically import the PodiumScene component with a loading skeleton
+const PodiumScene = dynamic(() => import('@/components/Leaderboard/PodiumScene'), {
+  loading: () => <Skeleton className="h-full w-full" />,
+  ssr: false // Disable SSR for this component as it relies on browser APIs (Three.js)
+});
 
 
 // Placeholder Loading Component
@@ -192,11 +199,11 @@ const LeaderboardPage: React.FC = () => {
   // Memoize derived data to avoid recalculations
   const topPerformers = React.useMemo(() => leaderboardData?.slice(0, 3) ?? [], [leaderboardData]);
   const podiumPerformers = React.useMemo(() => topPerformers.map(p => ({
-        project_id: p.id,
+        project_id: p.id, // Use id as project_id for PodiumScene
         city: p.city,
-        rag_status: p.ragStatus.status,
+        rag_status: p.ragStatus.status ?? 'N/A', // Handle potential undefined
         run_rate: p.score,
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString(), // Mock last updated for PodiumScene
         rank: p.rank,
   })), [topPerformers]);
 

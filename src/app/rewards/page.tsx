@@ -1,7 +1,8 @@
 // src/app/rewards/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { getLeaderboardData, getRewardDetails } from '@/services/api';
 import type { LeaderboardEntry, RewardDetails } from '@/types';
@@ -9,10 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CityBadge from '@/components/shared/CityBadge';
-import PodiumScene from '@/components/Leaderboard/PodiumScene'; // Reuse podium
+// import PodiumScene from '@/components/Leaderboard/PodiumScene'; // Reuse podium dynamically
 import { Skeleton } from '@/components/ui/skeleton';
 import { Award, Trophy, Star, Gift, Megaphone, Target, Medal, Users, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// Dynamically import the PodiumScene component with a loading skeleton
+const PodiumScene = dynamic(() => import('@/components/Leaderboard/PodiumScene'), {
+  loading: () => <Skeleton className="h-full w-full" />,
+  ssr: false // Disable SSR for this component as it relies on browser APIs (Three.js)
+});
 
 
 // Loading Skeleton for Rewards Page
@@ -163,11 +170,11 @@ const RewardsPage: React.FC = () => {
 
     const podiumPerformers = React.useMemo(() => {
         return (topPerformers ?? []).map(p => ({
-            project_id: p.id,
+            project_id: p.id, // Use id as project_id for PodiumScene
             city: p.city,
             rag_status: p.ragStatus?.status ?? 'N/A', // Handle potential undefined
             run_rate: p.score,
-            last_updated: new Date().toISOString(),
+            last_updated: new Date().toISOString(), // Mock last updated for PodiumScene
             rank: p.rank,
         }));
     }, [topPerformers]);
@@ -236,7 +243,9 @@ const RewardsPage: React.FC = () => {
                     </h2>
                     <Card className="h-[400px] lg:h-[450px] overflow-hidden shadow-lg border rounded-lg bg-gradient-to-br from-secondary/10 via-background to-background">
                        <CardContent className="p-0 h-full w-full flex items-center justify-center">
-                           <PodiumScene performers={podiumPerformers} />
+                          <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                             <PodiumScene performers={podiumPerformers} />
+                          </Suspense>
                        </CardContent>
                     </Card>
                 </section>
