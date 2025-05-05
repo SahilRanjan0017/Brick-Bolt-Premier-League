@@ -1,135 +1,273 @@
 // src/services/mockData.ts
-import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, Project, TeamMember } from '@/types';
+import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, Project, OMTrendData, RAGCounts, Role } from '@/types';
 
-// Mock Leaderboard Data (Ranks and RAG will be calculated in API service)
-export const mockLeaderboard: Omit<LeaderboardEntry, 'rank' | 'ragStatus' | 'rankChange'>[] = [
-  { id: 'emp001', name: 'Arjun Sharma', city: 'BLR_A', score: 95, projectCount: 25, profilePic: 'https://picsum.photos/100/100?random=1' },
-  { id: 'emp002', name: 'Priya Singh', city: 'NCR', score: 92, projectCount: 28, profilePic: 'https://picsum.photos/100/100?random=2' },
-  { id: 'emp003', name: 'Vikram Reddy', city: 'HYD', score: 88, projectCount: 22, profilePic: 'https://picsum.photos/100/100?random=3' },
-  { id: 'emp004', name: 'Sneha Patel', city: 'BLR_B', score: 85, projectCount: 26, profilePic: 'https://picsum.photos/100/100?random=4' },
-  { id: 'emp005', name: 'Rohan Gupta', city: 'CHN', score: 82, projectCount: 20, profilePic: 'https://picsum.photos/100/100?random=5' },
-  { id: 'emp006', name: 'Meera Iyer', city: 'BLR_A', score: 78, projectCount: 23, profilePic: 'https://picsum.photos/100/100?random=6' },
-  { id: 'emp007', name: 'Amit Kumar', city: 'NCR', score: 75, projectCount: 21, profilePic: 'https://picsum.photos/100/100?random=7' },
-  { id: 'emp008', name: 'Deepika Rao', city: 'HYD', score: 70, projectCount: 19, profilePic: 'https://picsum.photos/100/100?random=8' },
-  { id: 'emp009', name: 'Karan Mehta', city: 'BLR_B', score: 65, projectCount: 24, profilePic: 'https://picsum.photos/100/100?random=9' },
-  { id: 'emp010', name: 'Anjali Nair', city: 'CHN', score: 58, projectCount: 18, profilePic: 'https://picsum.photos/100/100?random=10' },
-  // Add more entries as needed
-];
+// --- Helper Functions ---
 
-// Mock Historical Winners
+const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts => {
+    // Simple mock logic: higher score = more green, fewer red/amber
+    let green = 0, amber = 0, red = 0;
+    const baseGreen = Math.floor(projectCount * (score / 100));
+    const remaining = projectCount - baseGreen;
+
+    if (score > 85) {
+        green = baseGreen + Math.floor(remaining * 0.7);
+        amber = projectCount - green;
+        red = 0;
+    } else if (score > 65) {
+        green = baseGreen;
+        amber = Math.floor(remaining * 0.6);
+        red = projectCount - green - amber;
+    } else {
+        green = Math.max(1, baseGreen - Math.floor(remaining * 0.5)); // Ensure at least 1 green if score > 0
+        red = Math.floor(remaining * 0.6);
+        amber = projectCount - green - red;
+    }
+     // Ensure non-negative counts and total matches projectCount
+     green = Math.max(0, green);
+     amber = Math.max(0, amber);
+     red = Math.max(0, red);
+     const total = green + amber + red;
+     if (total !== projectCount) {
+        // Adjust green first if possible
+        green += (projectCount - total);
+        if (green < 0) { // If adjustment made green negative, take from amber
+            amber += green;
+            green = 0;
+        }
+        if(amber < 0) { // If amber adjustment went negative, take from red
+             red += amber;
+             amber = 0;
+        }
+        red = Math.max(0, red); // Ensure red isn't negative
+     }
+
+
+    return { green, amber, red };
+};
+
+const getRandomRole = (index: number): Role => {
+    const mod = index % 10;
+    if (mod < 1) return 'OM'; // ~10% OM
+    if (mod < 4) return 'TL'; // ~30% TL
+    return 'SPM'; // ~60% SPM
+};
+
+const assignManager = (role: Role, omList: string[], tlList: string[]): string | undefined => {
+    if (role === 'TL' && omList.length > 0) return omList[Math.floor(Math.random() * omList.length)];
+    if (role === 'SPM' && tlList.length > 0) return tlList[Math.floor(Math.random() * tlList.length)];
+    return undefined;
+}
+
+// --- Mock Leaderboard Data ---
+// Generate more entries for better role distribution
+const numEntries = 30;
+const cities = ['BLR_A', 'BLR_B', 'CHN', 'NCR', 'HYD'];
+const rawLeaderboard: Omit<LeaderboardEntry, 'rank' | 'ragStatus' | 'manages' | 'reportsTo' | 'projectCount' | 'rankChange'>[] = Array.from({ length: numEntries }, (_, i) => {
+    const score = Math.floor(50 + Math.random() * 49); // Score 50-98
+    return {
+        id: `emp${String(i + 1).padStart(3, '0')}`,
+        name: `Employee ${String(i + 1).padStart(3, '0')}`,
+        city: cities[i % cities.length],
+        score: score,
+        // projectCount: Math.floor(5 + Math.random() * 15), // Assign later based on role
+        role: getRandomRole(i), // Assign role
+        profilePic: `https://picsum.photos/100/100?random=${i + 1}`
+    };
+});
+
+// Assign hierarchy and project counts based on roles
+const oms = rawLeaderboard.filter(e => e.role === 'OM');
+const tls = rawLeaderboard.filter(e => e.role === 'TL');
+const spms = rawLeaderboard.filter(e => e.role === 'SPM');
+
+const omIds = oms.map(om => om.id);
+const tlIds = tls.map(tl => tl.id);
+
+export const mockLeaderboard: LeaderboardEntry[] = rawLeaderboard.map((entry) => {
+    let reportsTo: string | undefined = undefined;
+    let manages: LeaderboardEntry['manages'] | undefined = undefined;
+    let projectCount: number | undefined = undefined;
+
+    if (entry.role === 'OM') {
+        // OM manages TLs and SPMs (mock assignment)
+        manages = {
+            tls: tls.filter(tl => tl.city === entry.city && Math.random() > 0.3).map(tl => tl.id), // Assign some TLs in the same city
+            spms: spms.filter(spm => spm.city === entry.city && Math.random() > 0.4).map(spm => spm.id) // Assign some SPMs in the same city
+        };
+        // OMs don't directly manage projects in this model
+    } else if (entry.role === 'TL') {
+        reportsTo = assignManager(entry.role, omIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city), []); // Report to OM in same city
+        projectCount = Math.floor(8 + Math.random() * 8); // TLs manage more projects
+    } else if (entry.role === 'SPM') {
+        const cityTLs = tlIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city);
+        reportsTo = assignManager(entry.role, [], cityTLs); // Report to TL in same city
+        projectCount = Math.floor(3 + Math.random() * 5); // SPMs manage fewer projects
+    }
+
+    return {
+        ...entry,
+        rank: 0, // Will be calculated later
+        ragStatus: calculateRagCounts(entry.score, projectCount ?? 0),
+        projectCount: projectCount,
+        manages: manages,
+        reportsTo: reportsTo,
+    };
+}).sort((a, b) => b.score - a.score) // Sort by score
+  .map((entry, index) => ({ ...entry, rank: index + 1 })); // Assign ranks
+
+
+// --- Mock Historical Winners (Keep simple for now) ---
 export const mockHistoricalWinners: HistoricalWinner[] = Array.from({ length: 8 }, (_, i) => {
-    const week = 30 - i; // Example: Weeks 30 down to 23
+    const week = 30 - i;
     const winnerIndex = Math.floor(Math.random() * mockLeaderboard.length);
     const winner = mockLeaderboard[winnerIndex];
     return {
         week: week,
         name: winner.name,
         city: winner.city,
-        profilePic: winner.profilePic, // Reuse profile pic from leaderboard mock
+        profilePic: winner.profilePic,
     }
 });
 
+
 // --- Mock City Details ---
-
-const generateProjects = (cityPrefix: string, count: number): Project[] => {
-    return Array.from({ length: count }, (_, i) => {
-        const runRate = Math.floor(50 + Math.random() * 50); // Random run rate 50-99
-        return {
-            id: `${cityPrefix}_proj_${i + 1}`,
-            name: `${cityPrefix} Project #${i + 1}`,
-            runRate: runRate,
-            lastUpdated: new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 10 days
-            ragStatus: runRate > 85 ? 'Green' : runRate > 65 ? 'Amber' : 'Red',
-        };
+const generateProjectsForCity = (cityId: string, personnel: LeaderboardEntry[]): Project[] => {
+    const projects: Project[] = [];
+    const managers = personnel.filter(p => p.role === 'TL' || p.role === 'SPM');
+    managers.forEach(manager => {
+        for (let i = 0; i < (manager.projectCount ?? 0); i++) {
+             const runRate = Math.floor(50 + Math.random() * 50);
+             projects.push({
+                id: `${manager.id}_proj_${i + 1}`,
+                name: `${cityId} ${manager.role} Project #${i + 1}`,
+                runRate: runRate,
+                lastUpdated: new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString(),
+                ragStatus: runRate > 85 ? 'Green' : runRate > 65 ? 'Amber' : 'Red',
+                managedBy: manager.id,
+                managerRole: manager.role as 'TL' | 'SPM',
+            });
+        }
     });
-};
-
-const generateTeamMembers = (cityPrefix: string, count: number): TeamMember[] => {
-     return Array.from({ length: count }, (_, i) => ({
-         id: `${cityPrefix}_mem_${i + 1}`,
-         name: `${cityPrefix} Member ${i + 1}`,
-         role: Math.random() > 0.5 ? 'Project Manager' : 'Site Engineer', // Example roles
-         profilePic: `https://picsum.photos/100/100?random=${cityPrefix}${i + 1}`,
-     }));
-};
-
-const generatePerformanceHistory = (weeks: number): { week: number; runRate: number }[] => {
-    return Array.from({ length: weeks }, (_, i) => ({
-        week: 30 - weeks + i + 1, // Example: Last 'weeks' weeks ending week 30
-        runRate: Math.floor(60 + Math.random() * 35), // Random run rate 60-94
-    }));
-};
-
-const calculateRagSummary = (projects: Project[]): CityData['ragSummary'] => {
-    const summary = projects.reduce(
-        (acc, project) => {
-            if (project.ragStatus === 'Green') acc.green++;
-            else if (project.ragStatus === 'Amber') acc.amber++;
-            else if (project.ragStatus === 'Red') acc.red++;
-            return acc;
-        },
-        { green: 0, amber: 0, red: 0 }
-    );
-    const totalProjects = projects.length;
-    // Simulate active projects (e.g., 90% of total)
-    const activeProjects = Math.floor(totalProjects * 0.9);
-    return { ...summary, totalProjects, activeProjects };
-};
-
-const generateCityData = (cityId: string, projectCount: number, memberCount: number, historyWeeks: number): CityData => {
-    const projects = generateProjects(cityId, projectCount);
-    return {
-        id: cityId,
-        name: `City ${cityId}`, // Or a more descriptive name if available
-        performanceHistory: generatePerformanceHistory(historyWeeks),
-        ragSummary: calculateRagSummary(projects),
-        projects: projects,
-        teamMembers: generateTeamMembers(cityId, memberCount),
-    };
+    return projects;
 }
 
-export const mockCityDetails: Record<string, CityData> = {
-    'BLR_A': generateCityData('BLR_A', 15, 8, 12),
-    'BLR_B': generateCityData('BLR_B', 18, 10, 12),
-    'CHN': generateCityData('CHN', 12, 7, 12),
-    'NCR': generateCityData('NCR', 20, 12, 12),
-    'HYD': generateCityData('HYD', 16, 9, 12),
-};
+const calculateRoleRagSummary = (personnel: LeaderboardEntry[], role: Role): RAGCounts => {
+     return personnel
+         .filter(p => p.role === role)
+         .reduce(
+             (acc, p) => {
+                 acc.green += p.ragStatus.green;
+                 acc.amber += p.ragStatus.amber;
+                 acc.red += p.ragStatus.red;
+                 return acc;
+             },
+             { green: 0, amber: 0, red: 0 }
+         );
+}
+
+const calculateRoleProjectCount = (personnel: LeaderboardEntry[], role: Role): number => {
+     return personnel
+         .filter(p => p.role === role)
+         .reduce((sum, p) => sum + (p.projectCount ?? 0), 0);
+}
 
 
-// --- Mock Reward Details ---
+export const mockCityDetails: Record<string, CityData> = cities.reduce((acc, cityId) => {
+    const cityPersonnel = mockLeaderboard.filter(p => p.city === cityId);
+    const cityProjects = generateProjectsForCity(cityId, cityPersonnel); // Generate projects based on city personnel
+
+    const tlRag = calculateRoleRagSummary(cityPersonnel, 'TL');
+    const spmRag = calculateRoleRagSummary(cityPersonnel, 'SPM');
+
+    const tlProjects = calculateRoleProjectCount(cityPersonnel, 'TL');
+    const spmProjects = calculateRoleProjectCount(cityPersonnel, 'SPM');
+
+    acc[cityId] = {
+        id: cityId,
+        name: `City ${cityId}`, // Placeholder name
+        ragBreakdown: {
+            tl: tlRag,
+            spm: spmRag,
+        },
+        projectCounts: {
+            tl: tlProjects,
+            spm: spmProjects,
+            total: tlProjects + spmProjects,
+        },
+        personnel: cityPersonnel, // Include personnel list for potential display
+        // performanceHistory can be added similarly if needed
+    };
+    return acc;
+}, {} as Record<string, CityData>);
+
+
+// --- Mock OM Trend Data ---
+const generateWeeklyScore = (baseScore: number): number => {
+    // Simulate score fluctuation around the base score
+    return Math.max(40, Math.min(99, baseScore + Math.floor(Math.random() * 21) - 10));
+}
+
+export const mockOMTrends: OMTrendData[] = oms.map(om => {
+    const weeklyScores = Array.from({ length: 8 }, (_, i) => ({
+        week: 30 - 7 + i, // Last 8 weeks ending week 30
+        // Mock aggregated score based on OM's own score + some noise
+        score: generateWeeklyScore(om.score),
+    }));
+
+    // Mock subordinate ranks (optional, basic example)
+    const subordinateRanks = Array.from({ length: 8 }, (_, i) => ({
+        week: 30 - 7 + i,
+        tlRank: Math.floor(Math.random() * 10) + 1, // Placeholder rank
+        spmRank: Math.floor(Math.random() * 20) + 1, // Placeholder rank
+    }));
+
+    return {
+        omId: om.id,
+        omName: om.name,
+        weeklyScores: weeklyScores,
+        subordinateRanks: subordinateRanks, // Include placeholder ranks
+    };
+});
+
+// --- Mock Reward Details (Assign based on top ranks in roles) ---
+const getTopPerformerId = (role: Role): string | null => {
+    const sortedByRole = mockLeaderboard.filter(p => p.role === role).sort((a,b) => b.score - a.score);
+    return sortedByRole.length > 0 ? sortedByRole[0].id : null;
+}
 
 export const mockRewardDetails: RewardDetails = {
     awards: {
+        // Assign Employee of the Month to top OM for now
         employeeOfMonth: {
-            title: "Employee of the Month",
-            awardeeId: "emp001", // Link to LeaderboardEntry ID (Arjun Sharma)
+            title: "Manager of the Month (OM)",
+            awardeeId: getTopPerformerId('OM'),
         },
+        // Assign City Champion to top TL
         cityChampion: {
-            title: "City Champion (NCR)",
-            awardeeId: "emp002", // Link to LeaderboardEntry ID (Priya Singh)
+            title: "Lead Champion (TL)",
+             awardeeId: getTopPerformerId('TL'),
         },
+         // Assign Innovation Award to top SPM
         innovationAward: {
-            title: "Innovation Award",
-             awardeeId: "emp004", // Link to LeaderboardEntry ID (Sneha Patel)
+            title: "Execution Excellence (SPM)",
+             awardeeId: getTopPerformerId('SPM'),
         },
     },
+     // Keep incentives generic for now
     incentives: {
-        ops: [
-            "Metric 1: On-time project stage completion (>95%)",
-            "Metric 2: Customer Satisfaction Score (>4.8/5)",
-            "Metric 3: Budget Adherence (<2% variance)",
-            "Metric 4: Safety Incident Rate (Zero incidents)",
+        ops: [ // Could represent OM/TL/SPM combined or needs splitting
+            "Metric: Overall Team RAG Score Improvement",
+            "Metric: Client Escalation Reduction",
+            "Metric: Cross-functional Collaboration",
         ],
         vm: [
             "Metric A: Vendor Onboarding Time (< 3 days)",
             "Metric B: Material Quality Score (>98%)",
             "Metric C: Cost Savings Achieved (>5%)",
-            "Metric D: Vendor Performance Rating (>4.5/5)",
         ],
     },
     programs: {
-        quarterlyAwards: "Top performers across various categories recognized quarterly with bonuses and company-wide announcement.",
-        annualConference: "Highest achievers invited to the annual leadership conference for special recognition and networking.",
+        quarterlyAwards: "Top performers in OM, TL, and SPM categories recognized quarterly.",
+        annualConference: "Highest achievers across all roles invited to the annual leadership conference.",
     }
 };

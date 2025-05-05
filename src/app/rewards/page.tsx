@@ -1,25 +1,27 @@
 // src/app/rewards/page.tsx
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { getLeaderboardData, getRewardDetails } from '@/services/api';
-import type { LeaderboardEntry, RewardDetails } from '@/types';
+// Use consolidated API call or specific ones if needed
+import { getFullLeaderboard, getRewardDetails } from '@/services/api';
+import type { LeaderboardEntry, RewardDetails, Role } from '@/types'; // Import Role type
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CityBadge from '@/components/shared/CityBadge';
-// import PodiumScene from '@/components/Leaderboard/PodiumScene'; // Reuse podium dynamically
+// PodiumScene might not be needed here anymore if Leaderboard page handles top performers
+// import PodiumScene from '@/components/Leaderboard/PodiumScene';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Trophy, Star, Gift, Megaphone, Target, Medal, Users, AlertCircle } from 'lucide-react';
+import { Award, Star, Gift, Megaphone, Target, Medal, Users, UserCog, UserCheck, AlertCircle } from 'lucide-react'; // Added role icons
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Dynamically import the PodiumScene component with a loading skeleton
-const PodiumScene = dynamic(() => import('@/components/Leaderboard/PodiumScene'), {
-  loading: () => <Skeleton className="h-full w-full" />,
-  ssr: false // Disable SSR for this component as it relies on browser APIs (Three.js)
-});
+// Dynamic import (if PodiumScene is kept)
+// const PodiumScene = dynamic(() => import('@/components/Leaderboard/PodiumScene'), {
+//   loading: () => <Skeleton className="h-[400px] lg:h-[450px] w-full" />,
+//   ssr: false
+// });
 
 
 // Loading Skeleton for Rewards Page
@@ -29,13 +31,13 @@ const LoadingSkeleton = () => (
            <Skeleton className="h-7 w-7" /> <Skeleton className="h-7 w-48" />
         </h1>
 
-        {/* Podium Skeleton */}
-         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-            <Skeleton className="h-6 w-6" /> <Skeleton className="h-6 w-52" />
-         </h2>
+        {/* Podium Skeleton (Optional: Can be removed if Podium is only on Leaderboard) */}
+        {/* <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+           <Skeleton className="h-6 w-6" /> <Skeleton className="h-6 w-52" />
+        </h2>
         <Card className="h-[400px] lg:h-[450px] flex items-center justify-center shadow-lg border rounded-lg bg-gradient-to-br from-secondary/10 via-background to-background">
            <Skeleton className="h-3/4 w-3/4" />
-        </Card>
+        </Card> */}
 
         {/* Recognition Cards Skeleton */}
          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
@@ -43,7 +45,7 @@ const LoadingSkeleton = () => (
           </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            {[...Array(3)].map((_, i) => (
-               <Card key={i} className="text-center border rounded-lg overflow-hidden h-full flex flex-col">
+               <Card key={i} className="text-center border rounded-lg overflow-hidden h-full flex flex-col min-h-[300px]">
                    <CardHeader className="items-center pb-2 bg-gradient-to-b from-muted/10 to-background">
                       <Skeleton className="h-10 w-10 mb-2 rounded-full" /> {/* Icon */}
                       <Skeleton className="h-6 w-32 mt-1" /> {/* Title */}
@@ -114,37 +116,71 @@ const LoadingSkeleton = () => (
     </div>
 );
 
+// --- Award Card Component ---
+interface AwardCardProps {
+    award: { title: string; awardeeId: string | null };
+    awardee: LeaderboardEntry | undefined | null; // Allow null if loading/not found
+    icon: React.ElementType;
+    iconColorClass: string;
+    gradientClass: string;
+    borderColorClass: string;
+    description: string;
+    aiHint: string;
+}
+
+const AwardCard: React.FC<AwardCardProps> = ({ award, awardee, icon: Icon, iconColorClass, gradientClass, borderColorClass, description, aiHint }) => (
+     <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
+        <Card className={`text-center hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden h-full flex flex-col min-h-[300px]`}>
+            <CardHeader className={`items-center pb-2 ${gradientClass}`}>
+                <Icon className={`h-10 w-10 ${iconColorClass} mb-2`} />
+                <CardTitle>{award.title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4 flex-grow flex flex-col items-center justify-center">
+                {awardee === null ? ( // Check for explicitly null (loading/not found)
+                    <p className="text-muted-foreground">Details loading...</p>
+                ) : awardee ? ( // Check if awardee data exists
+                    <>
+                        <Avatar className={`h-16 w-16 mb-3 border-2 ${borderColorClass} shadow-md`}>
+                            <AvatarImage src={awardee.profilePic} alt={awardee.name} data-ai-hint={aiHint}/>
+                            <AvatarFallback>{awardee.name.substring(0, 1)}</AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-lg">{awardee.name}</p>
+                        <p className="text-sm text-muted-foreground">{awardee.role}</p> {/* Show role */}
+                        <CityBadge city={awardee.city} className="mt-1" />
+                    </>
+                ) : ( // Awardee ID was null or not found in leaderboard
+                    <p className="text-muted-foreground">To be announced</p>
+                )}
+            </CardContent>
+        </Card>
+     </motion.div>
+);
+
+
+// --- Rewards Page Component ---
 const RewardsPage: React.FC = () => {
-    const [topPerformers, setTopPerformers] = useState<LeaderboardEntry[] | null>(null);
     const [rewardDetails, setRewardDetails] = useState<RewardDetails | null>(null);
+    const [fullLeaderboard, setFullLeaderboard] = useState<LeaderboardEntry[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // We need full leaderboard data to reliably find awardees if they aren't in top 3
-    // Alternatively, modify the API or add a separate endpoint to get user details by ID
-    const [fullLeaderboard, setFullLeaderboard] = useState<LeaderboardEntry[] | null>(null);
-
-    useEffect(() => {
+     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
-            setTopPerformers(null);
             setRewardDetails(null);
             setFullLeaderboard(null);
 
             try {
-                // Fetch all data concurrently
+                // Fetch concurrently
                  const [leaderboardResult, rewardsResult] = await Promise.allSettled([
-                    getLeaderboardData(), // Fetch full leaderboard first
+                    getFullLeaderboard(),
                     getRewardDetails()
                 ]);
 
-                let fetchedLeaderboard: LeaderboardEntry[] = [];
-
                 if (leaderboardResult.status === 'fulfilled') {
-                    fetchedLeaderboard = leaderboardResult.value;
-                    setFullLeaderboard(fetchedLeaderboard);
-                    setTopPerformers(fetchedLeaderboard.slice(0, 3)); // Derive top 3 from full list
+                    setFullLeaderboard(leaderboardResult.value);
                 } else {
                     console.error("Failed to load leaderboard data:", leaderboardResult.reason);
                     setError(prev => prev ? `${prev} Leaderboard data failed.` : "Leaderboard data failed.");
@@ -168,27 +204,18 @@ const RewardsPage: React.FC = () => {
         fetchData();
     }, []);
 
-    const podiumPerformers = React.useMemo(() => {
-        return (topPerformers ?? []).map(p => ({
-            project_id: p.id, // Use id as project_id for PodiumScene
-            city: p.city,
-            rag_status: p.ragStatus?.status ?? 'N/A', // Handle potential undefined
-            run_rate: p.score,
-            last_updated: new Date().toISOString(), // Mock last updated for PodiumScene
-            rank: p.rank,
-        }));
-    }, [topPerformers]);
 
-
-    // Helper to find awardee data using the full leaderboard
-    const findAwardee = (awardeeId: string | null): LeaderboardEntry | undefined => {
-        if (!awardeeId || !fullLeaderboard) return undefined;
+    // Helper to find awardee data from the full leaderboard
+    const findAwardee = (awardeeId: string | null): LeaderboardEntry | undefined | null=> {
+         if (isLoading) return null; // Indicate loading if leaderboard isn't ready
+        if (!awardeeId || !fullLeaderboard) return undefined; // Not found or leaderboard unavailable
         return fullLeaderboard.find(p => p.id === awardeeId);
     }
 
-    const employeeOfTheMonth = useMemo(() => findAwardee(rewardDetails?.awards?.employeeOfMonth?.awardeeId ?? null), [rewardDetails, fullLeaderboard]);
-    const cityChampion = useMemo(() => findAwardee(rewardDetails?.awards?.cityChampion?.awardeeId ?? null), [rewardDetails, fullLeaderboard]);
-    const innovationAwardee = useMemo(() => findAwardee(rewardDetails?.awards?.innovationAward?.awardeeId ?? null), [rewardDetails, fullLeaderboard]);
+    // Memoize finding awardees to prevent re-renders
+    const employeeOfTheMonth = useMemo(() => findAwardee(rewardDetails?.awards?.employeeOfMonth?.awardeeId ?? null), [rewardDetails, fullLeaderboard, isLoading]);
+    const cityChampion = useMemo(() => findAwardee(rewardDetails?.awards?.cityChampion?.awardeeId ?? null), [rewardDetails, fullLeaderboard, isLoading]);
+    const innovationAwardee = useMemo(() => findAwardee(rewardDetails?.awards?.innovationAward?.awardeeId ?? null), [rewardDetails, fullLeaderboard, isLoading]);
 
 
     if (isLoading) {
@@ -196,7 +223,7 @@ const RewardsPage: React.FC = () => {
     }
 
     // Handle total failure
-    if (error && !topPerformers && !rewardDetails) {
+    if (error && !fullLeaderboard && !rewardDetails) {
          return (
              <div className="container mx-auto px-4 py-8">
                  <Alert variant="destructive">
@@ -211,7 +238,7 @@ const RewardsPage: React.FC = () => {
     }
 
     // Handle partial failure
-     const partialError = error && (topPerformers || rewardDetails);
+     const partialError = error && (fullLeaderboard || rewardDetails);
 
     return (
         <motion.div
@@ -235,114 +262,58 @@ const RewardsPage: React.FC = () => {
                  </Alert>
             )}
 
-            {/* Podium Visualization - Only render if data is available */}
-            {podiumPerformers.length > 0 ? (
-                <section>
-                    <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                        <Trophy className="text-secondary h-6 w-6" /> Current Top Performers
-                    </h2>
-                    <Card className="h-[400px] lg:h-[450px] overflow-hidden shadow-lg border rounded-lg bg-gradient-to-br from-secondary/10 via-background to-background">
-                       <CardContent className="p-0 h-full w-full flex items-center justify-center">
-                          <Suspense fallback={<Skeleton className="h-full w-full" />}>
-                             <PodiumScene performers={podiumPerformers} />
-                          </Suspense>
-                       </CardContent>
-                    </Card>
-                </section>
-             ) : (
-                 topPerformers !== null && !isLoading && ( // Only show if loading finished and data is confirmed empty
-                     <section>
-                         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                             <Trophy className="text-secondary h-6 w-6" /> Current Top Performers
-                         </h2>
-                         <Card className="h-[100px] flex items-center justify-center shadow-lg border rounded-lg bg-gradient-to-br from-secondary/10 via-background to-background">
-                             <p className="text-muted-foreground">Leaderboard data not available for podium.</p>
-                         </Card>
-                     </section>
-                 )
-             )}
+             {/* Optional: Podium Visualization (Remove if only on Leaderboard) */}
+            {/* {podiumPerformers.length > 0 && ( ... )} */}
 
-            {/* Recognition Cards - Only render if data is available */}
+
+            {/* Recognition Cards - Only render if rewardDetails is available */}
             {rewardDetails ? (
                 <section>
                     <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
                         <Star className="text-secondary h-6 w-6" /> Special Recognitions
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                       {/* Employee of the Month */}
-                       <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
-                           <Card className="text-center hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden h-full flex flex-col">
-                               <CardHeader className="items-center pb-2 bg-gradient-to-b from-amber-100 to-background dark:from-amber-900/30">
-                                   <Medal className="h-10 w-10 text-amber-500 mb-2" />
-                                   <CardTitle>{rewardDetails.awards.employeeOfMonth?.title ?? 'Employee of the Month'}</CardTitle>
-                                   <CardDescription>Awarded for exceptional performance</CardDescription>
-                               </CardHeader>
-                               <CardContent className="pt-4 flex-grow flex flex-col items-center justify-center min-h-[150px]">
-                                   {employeeOfTheMonth ? (
-                                       <>
-                                           <Avatar className="h-16 w-16 mb-3 border-2 border-amber-400 shadow-md">
-                                               <AvatarImage src={employeeOfTheMonth.profilePic} alt={employeeOfTheMonth.name} data-ai-hint="employee award portrait"/>
-                                               <AvatarFallback>{employeeOfTheMonth.name.substring(0, 1)}</AvatarFallback>
-                                           </Avatar>
-                                           <p className="font-semibold text-lg">{employeeOfTheMonth.name}</p>
-                                           <CityBadge city={employeeOfTheMonth.city} className="mt-1" />
-                                       </>
-                                   ) : (
-                                        <p className="text-muted-foreground">To be announced</p>
-                                   )}
-                               </CardContent>
-                           </Card>
-                       </motion.div>
+                       {/* Manager of the Month (OM) */}
+                       {rewardDetails.awards.employeeOfMonth && (
+                           <AwardCard
+                                award={rewardDetails.awards.employeeOfMonth}
+                                awardee={employeeOfTheMonth}
+                                icon={Medal}
+                                iconColorClass="text-amber-500"
+                                gradientClass="bg-gradient-to-b from-amber-100 to-background dark:from-amber-900/30"
+                                borderColorClass="border-amber-400"
+                                description="Awarded for exceptional leadership (OM)"
+                                aiHint="manager award portrait"
+                           />
+                        )}
 
-                        {/* City Champion */}
-                       <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
-                           <Card className="text-center hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden h-full flex flex-col">
-                               <CardHeader className="items-center pb-2 bg-gradient-to-b from-blue-100 to-background dark:from-blue-900/30">
-                                   <Award className="h-10 w-10 text-blue-500 mb-2" />
-                                   <CardTitle>{rewardDetails.awards.cityChampion?.title ?? 'City Champion'}</CardTitle>
-                                   <CardDescription>Top performer in their city</CardDescription>
-                               </CardHeader>
-                               <CardContent className="pt-4 flex-grow flex flex-col items-center justify-center min-h-[150px]">
-                                   {cityChampion ? (
-                                       <>
-                                           <Avatar className="h-16 w-16 mb-3 border-2 border-blue-400 shadow-md">
-                                               <AvatarImage src={cityChampion.profilePic} alt={cityChampion.name} data-ai-hint="city champion award"/>
-                                               <AvatarFallback>{cityChampion.name.substring(0, 1)}</AvatarFallback>
-                                           </Avatar>
-                                           <p className="font-semibold text-lg">{cityChampion.name}</p>
-                                           <CityBadge city={cityChampion.city} className="mt-1" />
-                                       </>
-                                   ) : (
-                                        <p className="text-muted-foreground">To be announced</p>
-                                   )}
-                               </CardContent>
-                           </Card>
-                       </motion.div>
+                        {/* Lead Champion (TL) */}
+                        {rewardDetails.awards.cityChampion && (
+                            <AwardCard
+                                award={rewardDetails.awards.cityChampion}
+                                awardee={cityChampion}
+                                icon={Award}
+                                iconColorClass="text-blue-500"
+                                gradientClass="bg-gradient-to-b from-blue-100 to-background dark:from-blue-900/30"
+                                borderColorClass="border-blue-400"
+                                description="Top performing Team Lead (TL)"
+                                aiHint="team lead award"
+                            />
+                        )}
 
-                       {/* Innovation Award */}
-                       <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
-                           <Card className="text-center hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden h-full flex flex-col">
-                               <CardHeader className="items-center pb-2 bg-gradient-to-b from-purple-100 to-background dark:from-purple-900/30">
-                                   <Star className="h-10 w-10 text-purple-500 mb-2" />
-                                   <CardTitle>{rewardDetails.awards.innovationAward?.title ?? 'Innovation Award'}</CardTitle>
-                                   <CardDescription>Recognizing creative solutions</CardDescription>
-                               </CardHeader>
-                               <CardContent className="pt-4 flex-grow flex flex-col items-center justify-center min-h-[150px]">
-                                   {innovationAwardee ? (
-                                       <>
-                                           <Avatar className="h-16 w-16 mb-3 border-2 border-purple-400 shadow-md">
-                                               <AvatarImage src={innovationAwardee.profilePic} alt={innovationAwardee.name} data-ai-hint="innovation award person"/>
-                                               <AvatarFallback>{innovationAwardee.name.substring(0, 1)}</AvatarFallback>
-                                           </Avatar>
-                                           <p className="font-semibold text-lg">{innovationAwardee.name}</p>
-                                            <CityBadge city={innovationAwardee.city} className="mt-1" />
-                                       </>
-                                   ) : (
-                                         <p className="text-muted-foreground">To be announced</p>
-                                   )}
-                               </CardContent>
-                           </Card>
-                       </motion.div>
+                       {/* Execution Excellence (SPM) */}
+                       {rewardDetails.awards.innovationAward && (
+                            <AwardCard
+                                award={rewardDetails.awards.innovationAward}
+                                awardee={innovationAwardee}
+                                icon={UserCheck} // Changed icon
+                                iconColorClass="text-purple-500"
+                                gradientClass="bg-gradient-to-b from-purple-100 to-background dark:from-purple-900/30"
+                                borderColorClass="border-purple-400"
+                                description="Recognizing execution excellence (SPM)"
+                                aiHint="project manager award person"
+                            />
+                       )}
                     </div>
                 </section>
              ) : (
@@ -365,11 +336,13 @@ const RewardsPage: React.FC = () => {
                     </h2>
                      <Card className="shadow-md border rounded-lg overflow-hidden">
                          <CardContent className="p-6">
+                            {/* Consider splitting Ops into OM/TL/SPM if data allows */}
                             <Accordion type="single" collapsible defaultValue="ops" className="w-full">
                               <AccordionItem value="ops">
                                 <AccordionTrigger className="text-lg font-semibold hover:no-underline">
                                     <div className="flex items-center gap-2">
-                                        <Users className="h-5 w-5 text-primary" /> Incentive-Ops Metrics
+                                        {/* Use a generic icon or specific ones if split */}
+                                        <Users className="h-5 w-5 text-primary" /> Operations Team Metrics (OM/TL/SPM)
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="pt-2 text-muted-foreground space-y-1">
@@ -378,10 +351,11 @@ const RewardsPage: React.FC = () => {
                                   )) : <p>No Ops incentive metrics defined.</p>}
                                 </AccordionContent>
                               </AccordionItem>
+                              {/* Keep VM separate as requested */}
                               <AccordionItem value="vm">
                                 <AccordionTrigger className="text-lg font-semibold hover:no-underline">
                                     <div className="flex items-center gap-2">
-                                        <Star className="h-5 w-5 text-primary" /> Incentive-VM Metrics
+                                        <Star className="h-5 w-5 text-primary" /> Vendor Management Metrics
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="pt-2 text-muted-foreground space-y-1">

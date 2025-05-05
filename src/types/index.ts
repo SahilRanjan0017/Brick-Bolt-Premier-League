@@ -1,5 +1,8 @@
 // src/types/index.ts
 
+// Role Type
+export type Role = 'OM' | 'TL' | 'SPM' | string; // Operations Manager, Team Lead, Senior Project Manager
+
 // RAG Status Type
 export type RagStatus = 'Green' | 'Amber' | 'Red' | string; // Allow string for flexibility
 
@@ -7,23 +10,31 @@ export interface RAGCounts {
     green: number;
     amber: number;
     red: number;
-    status: RagStatus; // Overall status (can be derived or explicit)
+    // Derived or explicit overall status is less relevant now with role-based views
 }
 
 // Leaderboard Entry Type
 export interface LeaderboardEntry {
     id: string; // Unique identifier for the entry/employee
     rank: number;
-    rankChange: number; // +1, 0, -1 for up, same, down
+    rankChange?: number; // Optional: +1, 0, -1 for up, same, down
     name: string;
+    role: Role; // Added Role
     city: string; // e.g., 'BLR_A', 'CHN'
-    score: number; // Overall performance score
-    projectCount: number;
-    ragStatus: RAGCounts;
+    score: number; // Represents overall performance/RAG score
+    projectCount?: number; // Make optional as it might not apply to all roles (e.g., OM)
+    ragStatus: RAGCounts; // RAG counts for their direct responsibility area
     profilePic?: string; // URL to profile picture (optional)
+    // For OMs, link to their subordinates
+    manages?: {
+        tls?: string[]; // Array of TL IDs
+        spms?: string[]; // Array of SPM IDs
+    }
+    // For TLs/SPMs, link to their manager
+    reportsTo?: string; // OM ID
 }
 
-// Historical Winner Type
+// Historical Winner Type (remains the same for now, might need role filtering later)
 export interface HistoricalWinner {
     week: number;
     name: string;
@@ -38,36 +49,57 @@ export interface Project {
     runRate: number; // Specific run rate for this project
     lastUpdated: string; // ISO date string
     ragStatus: RagStatus;
+    managedBy: string; // ID of the TL or SPM managing this project
+    managerRole: 'TL' | 'SPM'; // Role of the manager
 }
 
-// Team Member Type (for City View)
-export interface TeamMember {
-    id: string;
-    name: string;
-    role: string;
-    profilePic?: string;
-}
+// Team Member Type (for City View - Now using LeaderboardEntry, can be removed if not needed elsewhere)
+// export interface TeamMember {
+//     id: string;
+//     name: string;
+//     role: Role;
+//     profilePic?: string;
+// }
 
-// City Data Type (for City View)
+
+// City Data Type (for City View) - Updated for new requirements
 export interface CityData {
     id: string; // e.g., 'BLR_A'
     name: string; // e.g., 'Bangalore Alpha'
-    performanceHistory: {
+    // Keep overall performance history for the city if needed
+    performanceHistory?: {
         week: number;
         runRate: number; // Average run rate for the city that week
     }[];
-    ragSummary: {
-        green: number;
-        amber: number;
-        red: number;
-        totalProjects: number;
-        activeProjects: number;
+    // RAG breakdown by role
+    ragBreakdown: {
+        tl: RAGCounts;
+        spm: RAGCounts;
     };
-    projects: Project[];
-    teamMembers: TeamMember[];
+    // Project count by role
+    projectCounts: {
+        tl: number;
+        spm: number;
+        total: number;
+    };
+    // List of personnel in the city (fetched from leaderboard data, filtered by city)
+    personnel: LeaderboardEntry[];
 }
 
-// Reward Details Type
+// OM 8-Week Trend Data
+export interface OMTrendData {
+    omId: string;
+    omName: string;
+    weeklyScores: { week: number; score: number }[]; // Aggregated RAG score per week
+    subordinateRanks?: { // Optional: Placeholder for ranks
+        week: number;
+        tlRank?: number; // Average/Top rank of TLs under OM
+        spmRank?: number; // Average/Top rank of SPMs under OM
+    }[];
+}
+
+
+// Reward Details Type (remains mostly the same, awardee selection might change based on roles)
 export interface RewardAward {
     title: string;
     awardeeId: string | null; // ID linking to LeaderboardEntry, or null if TBD
@@ -75,14 +107,14 @@ export interface RewardAward {
 
 export interface RewardDetails {
     awards: {
-        employeeOfMonth: RewardAward;
-        cityChampion: RewardAward;
-        innovationAward: RewardAward;
+        employeeOfMonth: RewardAward; // Consider if this should be role specific
+        cityChampion: RewardAward; // Consider if this should be role specific
+        innovationAward: RewardAward; // Consider if this should be role specific
         // Add more awards as needed
     };
     incentives: {
-        ops: string[]; // List of incentive metrics/descriptions
-        vm: string[];
+        ops: string[]; // List of incentive metrics/descriptions (may need role separation OM/TL/SPM)
+        vm: string[]; // Assuming this is separate from OM/TL/SPM roles
     };
     programs: {
         quarterlyAwards: string; // Description of the program
@@ -90,13 +122,19 @@ export interface RewardDetails {
     };
 }
 
-// Type for data passed to PodiumScene
-export interface PodiumPerformerData {
-    project_id?: string; // Optional project ID from Cloud SQL schema
-    id?: string;         // Optional ID from leaderboard data
-    city: string;
-    rag_status?: RagStatus | undefined; // Make rag_status optional
-    run_rate: number;
-    last_updated?: string; // Optional
-    rank: number;
+// --- Consolidated API Response Types (Optional but helpful) ---
+
+export interface LeaderboardPageData {
+    topPerformers: {
+        om: LeaderboardEntry[];
+        tl: LeaderboardEntry[];
+        spm: LeaderboardEntry[];
+    };
+    omTrends: OMTrendData[];
+    fullLeaderboard: LeaderboardEntry[];
+    historicalWinners?: HistoricalWinner[]; // Keep if still needed
+}
+
+export interface CityViewsPageData {
+    [cityId: string]: CityData;
 }
