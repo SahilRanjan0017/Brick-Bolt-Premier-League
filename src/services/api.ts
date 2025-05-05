@@ -60,7 +60,7 @@ export const getOMTrendData = async (): Promise<OMTrendData[]> => {
 
 
 /**
- * Fetches historical weekly winners data. (Keep as is for now)
+ * Fetches historical weekly winners data.
  * @returns A promise resolving to an array of HistoricalWinner.
  */
 export const getHistoricalWinners = async (): Promise<HistoricalWinner[]> => {
@@ -82,7 +82,7 @@ export const getAllCityData = async (): Promise<CityViewsPageData> => {
 };
 
 /**
- * Fetches details about rewards and recognition programs. (Keep as is for now)
+ * Fetches details about rewards and recognition programs.
  * @returns A promise resolving to RewardDetails.
  */
 export const getRewardDetails = async (): Promise<RewardDetails> => {
@@ -103,13 +103,13 @@ export const getLeaderboardPageData = async (): Promise<LeaderboardPageData> => 
     await delay(1200); // Simulate longer delay for multiple fetches
 
     try {
-        const [topOMs, topTLs, topSPMs, omTrends, fullLeaderboard] = await Promise.all([
+        const [topOMs, topTLs, topSPMs, omTrends, fullLeaderboard, historicalWinners] = await Promise.all([
             getLeaderboardByRole('OM', 3),
             getLeaderboardByRole('TL', 3),
             getLeaderboardByRole('SPM', 3),
             getOMTrendData(),
             getFullLeaderboard(),
-            // getHistoricalWinners(), // Fetch historical winners if still needed
+            getHistoricalWinners(), // Fetch historical winners
         ]);
 
         console.log("API: Consolidated Leaderboard Page data fetched successfully.");
@@ -121,7 +121,7 @@ export const getLeaderboardPageData = async (): Promise<LeaderboardPageData> => 
             },
             omTrends: omTrends,
             fullLeaderboard: fullLeaderboard,
-            // historicalWinners: historicalWinners, // Include if fetched
+            historicalWinners: historicalWinners, // Include historical winners
         };
     } catch (error) {
         console.error("API Error: Failed to fetch consolidated leaderboard data.", error);
@@ -145,3 +145,5 @@ export const getCityViewsPageData = async (): Promise<CityViewsPageData> => {
          throw new Error("Failed to fetch city views page data");
      }
 }
+
+    

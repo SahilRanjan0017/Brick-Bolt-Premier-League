@@ -31,10 +31,10 @@ export interface LeaderboardEntry {
         spms?: string[]; // Array of SPM IDs
     }
     // For TLs/SPMs, link to their manager
-    reportsTo?: string; // OM ID
+    reportsTo?: string; // OM ID or TL ID
 }
 
-// Historical Winner Type (remains the same for now, might need role filtering later)
+// Historical Winner Type
 export interface HistoricalWinner {
     week: number;
     name: string;
@@ -132,9 +132,11 @@ export interface LeaderboardPageData {
     };
     omTrends: OMTrendData[];
     fullLeaderboard: LeaderboardEntry[];
-    historicalWinners?: HistoricalWinner[]; // Keep if still needed
+    historicalWinners: HistoricalWinner[]; // Ensure this is mandatory if page depends on it
 }
 
 export interface CityViewsPageData {
     [cityId: string]: CityData;
 }
+
+    
