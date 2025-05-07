@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brick & Bolt Vista - Leaderboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: hsl(210, 40%, 98%); /* --background */
+            color: hsl(215, 25%, 27%); /* --foreground */
+            margin: 0;
+            padding: 2rem; /* Equivalent to py-8 in container */
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Lexend', sans-serif;
+        }
+
+        /* Basic Card Style (can be overridden by more specific inline styles) */
+        .card {
+            background-color: hsl(0, 0%, 100%); /* --card */
+            color: hsl(215, 25%, 27%); /* --card-foreground */
+            border-radius: 0.5rem; /* --radius */
+            border: 1px solid hsl(214, 32%, 91%); /* --border */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-sm equivalent */
+        }
+        .card-header {
+            padding: 1.5rem; /* p-6 */
+            border-bottom: 1px solid hsl(214, 32%, 91%);
+        }
+        .card-title {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600;
+        }
+        .card-description {
+            font-size: 0.875rem; /* text-sm */
+            color: hsl(215, 8%, 45%); /* --muted-foreground */
+        }
+        .card-content {
+            padding: 1.5rem; /* p-6 */
+        }
+
+        /* Avatar Placeholder */
+        .avatar-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: hsl(210, 40%, 90%); /* --accent */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            color: hsl(215, 25%, 27%);
+            border: 1px solid hsl(214, 32%, 91%);
+        }
+        .avatar-placeholder-large {
+            width: 64px;
+            height: 64px;
+        }
+        
+        /* RAG Indicator Placeholder */
+        .rag-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+        .rag-green { background-color: hsl(120, 60%, 50%); }
+        .rag-amber { background-color: hsl(39, 100%, 50%); }
+        .rag-red { background-color: hsl(0, 70%, 50%); }
+
+        /* Utility for grid (since it's complex for purely inline) */
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        @media (min-width: 768px) { /* md breakpoint */
+            .md-grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1024px) { /* lg breakpoint */
+            .lg-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        .gap-6 { gap: 1.5rem; }
+
+    </style>
+</head>
+<body>
+
+    <div style="max-width: 1280px; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem;">
+
+        <!-- Page Title -->
+        <h1 style="font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="color: hsl(24, 96%, 53%);">[ICON:Crown H-7 W-7]</span> Leaderboard & Performance Trends
+        </h1>
+
+        <div style="display: flex; flex-direction: column; gap: 3rem;"> <!-- space-y-12 -->
+
+            <!-- Duplicated Section 1 -->
+            <div style="display: flex; flex-direction: column; gap: 2rem; border-bottom: 1px solid hsl(214, 32%, 91%); padding-bottom: 3rem;">
+                <!-- Top Performers by Role Section -->
+                <section>
+                    <h2 style="font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: hsl(210, 85%, 60%);">[ICON:BarChart3 H-6 W-6]</span> Top Performers by Role (#1)
+                    </h2>
+                    <div class="grid grid-cols-1 md-grid-cols-3 gap-6">
+                        <!-- OM Podium Chart -->
+                        <div class="card" style="overflow: hidden;">
+                            <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:UserCog H-5 W-5]</span> Top 3 Operations Managers</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Kiran M</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 95%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">95%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Suraj P</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 92%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">92%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Varun A</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 90%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">90%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- TL Podium Chart (similar structure) -->
+                        <div class="card" style="overflow: hidden;">
+                           <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:Users H-5 W-5]</span> Top 3 Team Leads</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Priya S</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 98%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">98%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Amit K</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 94%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">94%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Deepa R</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 89%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">89%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- SPM Podium Chart (similar structure) -->
+                        <div class="card" style="overflow: hidden;">
+                            <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:UserCheck H-5 W-5]</span> Top 3 Senior Project Managers</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (SPM) -->
+                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rohan B</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 96%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">96%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (SPM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Neha J</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 93%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">93%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (SPM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Vijay M</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 91%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">91%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Podium Scene Placeholder Section -->
+                <section>
+                    <h2 style="font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: hsl(210, 85%, 60%);">[ICON:Award H-6 W-6]</span> Podium Visualization (#1)
+                    </h2>
+                    <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border-radius: 0.5rem; background-image: linear-gradient(to bottom right, hsla(210, 85%, 60%, 0.1), hsl(210, 40%, 98%), hsl(210, 40%, 98%)); height: 350px; display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center; padding: 1rem;">
+                            <span style="font-size: 4rem; color: hsl(50,100%,50%); display: block; margin-left: auto; margin-right: auto; margin-bottom: 1rem;">[ICON:Crown H-16 W-16]</span>
+                            <p style="color: hsl(215, 8%, 45%);">3D Podium Visualization Area</p>
+                            <p style="font-size: 0.875rem; color: hsla(215, 8%, 45%, 0.8);">(Placeholder: Three.js component would render here)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Historical Winners Section -->
+                <section>
+                     <div class="card" style="overflow: hidden;">
+                        <div class="card-header">
+                            <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:History H-5 W-5]</span> Past Weekly Winners (#1)</h3>
+                            <p class="card-description">Top performers from the last 8 weeks</p>
+                        </div>
+                        <div class="card-content" style="padding-top: 0; max-height: 320px; overflow-y: auto;">
+                            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <!-- Winner 1 -->
+                                <li style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid hsl(214, 32%, 91%);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div class="avatar-placeholder" style="width: 36px; height: 36px;">PS</div>
+                                        <div>
+                                            <p style="font-size: 0.875rem; font-weight: 500;">Priya S</p>
+                                            <span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; background-color: hsl(210, 100%, 90%); color: hsl(210, 80%, 40%); border: 1px solid hsl(210, 80%, 70%);">BLR_A</span>
+                                        </div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: hsl(215, 8%, 45%);">Week 30</span>
+                                </li>
+                                <!-- Winner 2 -->
+                                <li style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid hsl(214, 32%, 91%);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div class="avatar-placeholder" style="width: 36px; height: 36px;">RB</div>
+                                        <div>
+                                            <p style="font-size: 0.875rem; font-weight: 500;">Rohan B</p>
+                                            <span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; background-color: hsl(25, 100%, 90%); color: hsl(25, 80%, 40%); border: 1px solid hsl(25, 80%, 70%);">CHN</span>
+                                        </div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: hsl(215, 8%, 45%);">Week 29</span>
+                                </li>
+                                 <!-- Add more winners as needed -->
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Duplicated Section 2 (Identical structure to Section 1, change #1 to #2) -->
+            <div style="display: flex; flex-direction: column; gap: 2rem; border-bottom: 1px solid hsl(214, 32%, 91%); padding-bottom: 3rem;">
+                <!-- Top Performers by Role Section -->
+                <section>
+                    <h2 style="font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: hsl(210, 85%, 60%);">[ICON:BarChart3 H-6 W-6]</span> Top Performers by Role (#2)
+                    </h2>
+                    <div class="grid grid-cols-1 md-grid-cols-3 gap-6">
+                         <!-- OM Podium Chart -->
+                        <div class="card" style="overflow: hidden;">
+                            <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:UserCog H-5 W-5]</span> Top 3 Operations Managers</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Kiran M</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 95%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">95%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Suraj P</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 92%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">92%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Varun A</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 90%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">90%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- TL Podium Chart (similar structure) -->
+                        <div class="card" style="overflow: hidden;">
+                           <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:Users H-5 W-5]</span> Top 3 Team Leads</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Priya S</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 98%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">98%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Amit K</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 94%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">94%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Deepa R</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 89%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">89%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- SPM Podium Chart (similar structure) -->
+                        <div class="card" style="overflow: hidden;">
+                            <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:UserCheck H-5 W-5]</span> Top 3 Senior Project Managers</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (SPM) -->
+                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rohan B</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 96%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">96%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (SPM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Neha J</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 93%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">93%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (SPM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Vijay M</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 91%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">91%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Podium Scene Placeholder Section -->
+                <section>
+                    <h2 style="font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: hsl(210, 85%, 60%);">[ICON:Award H-6 W-6]</span> Podium Visualization (#2)
+                    </h2>
+                     <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border-radius: 0.5rem; background-image: linear-gradient(to bottom right, hsla(210, 85%, 60%, 0.1), hsl(210, 40%, 98%), hsl(210, 40%, 98%)); height: 350px; display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center; padding: 1rem;">
+                            <span style="font-size: 4rem; color: hsl(50,100%,50%); display: block; margin-left: auto; margin-right: auto; margin-bottom: 1rem;">[ICON:Crown H-16 W-16]</span>
+                            <p style="color: hsl(215, 8%, 45%);">3D Podium Visualization Area</p>
+                            <p style="font-size: 0.875rem; color: hsla(215, 8%, 45%, 0.8);">(Placeholder: Three.js component would render here)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Historical Winners Section -->
+                <section>
+                     <div class="card" style="overflow: hidden;">
+                        <div class="card-header">
+                            <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:History H-5 W-5]</span> Past Weekly Winners (#2)</h3>
+                            <p class="card-description">Top performers from the last 8 weeks</p>
+                        </div>
+                        <div class="card-content" style="padding-top: 0; max-height: 320px; overflow-y: auto;">
+                            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <!-- Winner 1 -->
+                                <li style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid hsl(214, 32%, 91%);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div class="avatar-placeholder" style="width: 36px; height: 36px;">AK</div>
+                                        <div>
+                                            <p style="font-size: 0.875rem; font-weight: 500;">Amit K</p>
+                                            <span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; background-color: hsl(160, 100%, 90%); color: hsl(160, 80%, 40%); border: 1px solid hsl(160, 80%, 70%);">NCR</span>
+                                        </div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: hsl(215, 8%, 45%);">Week 28</span>
+                                </li>
+                                <!-- Winner 2 -->
+                                <li style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid hsl(214, 32%, 91%);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div class="avatar-placeholder" style="width: 36px; height: 36px;">VM</div>
+                                        <div>
+                                            <p style="font-size: 0.875rem; font-weight: 500;">Vijay M</p>
+                                             <span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; background-color: hsl(290, 100%, 90%); color: hsl(290, 80%, 40%); border: 1px solid hsl(290, 80%, 70%);">HYD</span>
+                                        </div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: hsl(215, 8%, 45%);">Week 27</span>
+                                </li>
+                                 <!-- Add more winners as needed -->
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+             <!-- Duplicated Section 3 (Identical structure to Section 1, change #1 to #3) -->
+            <div style="display: flex; flex-direction: column; gap: 2rem; padding-bottom: 3rem;"> <!-- Removed border-bottom for last item -->
+                 <!-- Top Performers by Role Section -->
+                <section>
+                    <h2 style="font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: hsl(210, 85%, 60%);">[ICON:BarChart3 H-6 W-6]</span> Top Performers by Role (#3)
+                    </h2>
+                    <div class="grid grid-cols-1 md-grid-cols-3 gap-6">
+                         <!-- OM Podium Chart -->
+                        <div class="card" style="overflow: hidden;">
+                            <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:UserCog H-5 W-5]</span> Top 3 Operations Managers</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Kiran M</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 95%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">95%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Suraj P</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 92%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">92%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (OM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Varun A</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 90%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">90%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- TL Podium Chart (similar structure) -->
+                        <div class="card" style="overflow: hidden;">
+                           <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:Users H-5 W-5]</span> Top 3 Team Leads</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Priya S</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 98%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">98%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Amit K</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 94%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">94%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (TL) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Deepa R</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 89%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">89%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- SPM Podium Chart (similar structure) -->
+                        <div class="card" style="overflow: hidden;">
+                            <div class="card-header">
+                                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:UserCheck H-5 W-5]</span> Top 3 Senior Project Managers</h3>
+                                <p class="card-description">By RAG Score</p>
+                            </div>
+                            <div class="card-content" style="height: 240px; padding-right: 1rem; margin-left: -0.25rem; display: flex; flex-direction: column; justify-content: space-around;">
+                                <!-- Performer 1 (SPM) -->
+                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rohan B</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(24, 96%, 53%); height: 100%; width: 96%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">96%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 2 (SPM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                   <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Neha J</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(210, 85%, 60%); height: 100%; width: 93%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">93%</div>
+                                    </div>
+                                </div>
+                                <!-- Performer 3 (SPM) -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="width: 80px; font-size: 0.75rem; color: hsl(215, 8%, 45%); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Vijay M</span>
+                                    <div style="flex-grow: 1; background-color: hsl(210, 40%, 96.1%); border-radius: 0.25rem; height: 20px;">
+                                        <div style="background-color: hsl(180, 60%, 55%); height: 100%; width: 91%; border-radius: 0.25rem 0 0 0.25rem; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: white; font-size: 0.75rem;">91%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Podium Scene Placeholder Section -->
+                <section>
+                    <h2 style="font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: hsl(210, 85%, 60%);">[ICON:Award H-6 W-6]</span> Podium Visualization (#3)
+                    </h2>
+                     <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border-radius: 0.5rem; background-image: linear-gradient(to bottom right, hsla(210, 85%, 60%, 0.1), hsl(210, 40%, 98%), hsl(210, 40%, 98%)); height: 350px; display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center; padding: 1rem;">
+                            <span style="font-size: 4rem; color: hsl(50,100%,50%); display: block; margin-left: auto; margin-right: auto; margin-bottom: 1rem;">[ICON:Crown H-16 W-16]</span>
+                            <p style="color: hsl(215, 8%, 45%);">3D Podium Visualization Area</p>
+                            <p style="font-size: 0.875rem; color: hsla(215, 8%, 45%, 0.8);">(Placeholder: Three.js component would render here)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Historical Winners Section -->
+                <section>
+                     <div class="card" style="overflow: hidden;">
+                        <div class="card-header">
+                            <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(210, 85%, 60%);">[ICON:History H-5 W-5]</span> Past Weekly Winners (#3)</h3>
+                            <p class="card-description">Top performers from the last 8 weeks</p>
+                        </div>
+                        <div class="card-content" style="padding-top: 0; max-height: 320px; overflow-y: auto;">
+                            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <!-- Winner 1 -->
+                                <li style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid hsl(214, 32%, 91%);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div class="avatar-placeholder" style="width: 36px; height: 36px;">VA</div>
+                                        <div>
+                                            <p style="font-size: 0.875rem; font-weight: 500;">Varun A</p>
+                                            <span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; background-color: hsl(210, 100%, 90%); color: hsl(210, 80%, 40%); border: 1px solid hsl(210, 80%, 70%);">BLR_B</span>
+                                        </div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: hsl(215, 8%, 45%);">Week 26</span>
+                                </li>
+                                <!-- Winner 2 -->
+                                <li style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid hsl(214, 32%, 91%);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div class="avatar-placeholder" style="width: 36px; height: 36px;">NJ</div>
+                                        <div>
+                                            <p style="font-size: 0.875rem; font-weight: 500;">Neha J</p>
+                                            <span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; background-color: hsl(25, 100%, 90%); color: hsl(25, 80%, 40%); border: 1px solid hsl(25, 80%, 70%);">CHN</span>
+                                        </div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: hsl(215, 8%, 45%);">Week 25</span>
+                                </li>
+                                 <!-- Add more winners as needed -->
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+
+            <!-- OM 8-Week Trends Section (Only shown once) -->
+            <section>
+                <h2 style="font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="color: hsl(210, 85%, 60%);">[ICON:TrendingUp H-6 W-6]</span> OM 8-Week RAG Score Trends
+                </h2>
+                <div class="grid grid-cols-1 md-grid-cols-2 lg-grid-cols-3 gap-6">
+                    <!-- OM Trend Chart 1 -->
+                    <div class="card" style="overflow: hidden;">
+                        <div class="card-header">
+                            <h3 class="card-title" style="font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(24, 96%, 53%);">[ICON:TrendingUp H-5 W-5]</span> Kiran M - 8 Week RAG Score</h3>
+                            <p class="card-description" style="font-size: 0.75rem;">Latest Ranks (Wk 30): TL - 2, SPM - 5</p>
+                        </div>
+                        <div class="card-content" style="height: 256px; padding-right: 1rem; margin-left: -0.25rem;">
+                            <!-- Placeholder for Line Chart -->
+                            <div style="width: 100%; height: 100%; background-color: hsl(210, 40%, 90%); display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; color: hsl(215, 8%, 45%);">Line Chart Area</div>
+                        </div>
+                    </div>
+                    <!-- OM Trend Chart 2 -->
+                    <div class="card" style="overflow: hidden;">
+                        <div class="card-header">
+                             <h3 class="card-title" style="font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(24, 96%, 53%);">[ICON:TrendingUp H-5 W-5]</span> Suraj P - 8 Week RAG Score</h3>
+                            <p class="card-description" style="font-size: 0.75rem;">Latest Ranks (Wk 30): TL - 4, SPM - 3</p>
+                        </div>
+                        <div class="card-content" style="height: 256px; padding-right: 1rem; margin-left: -0.25rem;">
+                            <div style="width: 100%; height: 100%; background-color: hsl(210, 40%, 90%); display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; color: hsl(215, 8%, 45%);">Line Chart Area</div>
+                        </div>
+                    </div>
+                    <!-- OM Trend Chart 3 -->
+                     <div class="card" style="overflow: hidden;">
+                        <div class="card-header">
+                            <h3 class="card-title" style="font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem;"><span style="color: hsl(24, 96%, 53%);">[ICON:TrendingUp H-5 W-5]</span> Varun A - 8 Week RAG Score</h3>
+                            <p class="card-description" style="font-size: 0.75rem;">Latest Ranks (Wk 30): TL - N/A, SPM - 8</p>
+                        </div>
+                        <div class="card-content" style="height: 256px; padding-right: 1rem; margin-left: -0.25rem;">
+                            <div style="width: 100%; height: 100%; background-color: hsl(210, 40%, 90%); display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; color: hsl(215, 8%, 45%);">Line Chart Area</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Full Leaderboard Table Section -->
+            <section>
+                <h2 style="font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="color: hsl(210, 85%, 60%);">[ICON:Users H-6 W-6]</span> Full Leaderboard
+                </h2>
+                <div class="card" style="overflow: hidden;">
+                    <div class="card-content" style="padding: 0;">
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                                <thead style="background-color: hsl(210, 40%, 96.1%);">
+                                    <tr>
+                                        <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: hsl(215, 8%, 45%); text-transform: uppercase; letter-spacing: 0.05em;">Rank</th>
+                                        <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: hsl(215, 8%, 45%); text-transform: uppercase; letter-spacing: 0.05em;">Name</th>
+                                        <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: hsl(215, 8%, 45%); text-transform: uppercase; letter-spacing: 0.05em;">City</th>
+                                        <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: hsl(215, 8%, 45%); text-transform: uppercase; letter-spacing: 0.05em;">Role</th>
+                                        <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.75rem; font-weight: 500; color: hsl(215, 8%, 45%); text-transform: uppercase; letter-spacing: 0.05em;">Score</th>
+                                        <th style="padding: 0.75rem 1rem; text-align: right; font-size: 0.75rem; font-weight: 500; color: hsl(215, 8%, 45%); text-transform: uppercase; letter-spacing: 0.05em;">Projects</th>
+                                        <th style="padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: hsl(215, 8%, 45%); text-transform: uppercase; letter-spacing: 0.05em;">RAG</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="font-size: 0.875rem;">
+                                    <!-- Row 1 -->
+                                    <tr style="border-bottom: 1px solid hsl(214, 32%, 91%);">
+                                        <td style="padding: 1rem; white-space: nowrap;">1 <span style="color: green;">▲</span></td>
+                                        <td style="padding: 1rem; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
+                                            <div class="avatar-placeholder">PS</div> Priya S
+                                        </td>
+                                        <td style="padding: 1rem; white-space: nowrap;"><span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; background-color: hsl(210, 100%, 90%); color: hsl(210, 80%, 40%); border: 1px solid hsl(210, 80%, 70%);">BLR_A</span></td>
+                                        <td style="padding: 1rem; white-space: nowrap;">TL</td>
+                                        <td style="padding: 1rem; text-align: right; white-space: nowrap;">98</td>
+                                        <td style="padding: 1rem; text-align: right; white-space: nowrap;">12</td>
+                                        <td style="padding: 1rem; white-space: nowrap;">
+                                            <span class="rag-indicator rag-green"></span>10
+                                            <span class="rag-indicator rag-amber" style="margin-left: 0.5rem;"></span>2
+                                            <span class="rag-indicator rag-red" style="margin-left: 0.5rem;"></span>0
+                                        </td>
+                                    </tr>
+                                    <!-- Row 2 -->
+                                     <tr style="border-bottom: 1px solid hsl(214, 32%, 91%);">
+                                        <td style="padding: 1rem; white-space: nowrap;">2 <span style="color: red;">▼</span></td>
+                                        <td style="padding: 1rem; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;">
+                                            <div class="avatar-placeholder">RB</div> Rohan B
+                                        </td>
+                                        <td style="padding: 1rem; white-space: nowrap;"><span style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; background-color: hsl(25, 100%, 90%); color: hsl(25, 80%, 40%); border: 1px solid hsl(25, 80%, 70%);">CHN</span></td>
+                                        <td style="padding: 1rem; white-space: nowrap;">SPM</td>
+                                        <td style="padding: 1rem; text-align: right; white-space: nowrap;">96</td>
+                                        <td style="padding: 1rem; text-align: right; white-space: nowrap;">7</td>
+                                        <td style="padding: 1rem; white-space: nowrap;">
+                                            <span class="rag-indicator rag-green"></span>6
+                                            <span class="rag-indicator rag-amber" style="margin-left: 0.5rem;"></span>1
+                                            <span class="rag-indicator rag-red" style="margin-left: 0.5rem;"></span>0
+                                        </td>
+                                    </tr>
+                                    <!-- Add more rows as needed -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Placeholder for any future JS, if needed for interactions not covered by CSS.
+        // For a static HTML/CSS version, this might remain empty or minimal.
+        // For example, to handle tab switching if you were to implement tabs without JS framework.
+    </script>
+</body>
+</html>
