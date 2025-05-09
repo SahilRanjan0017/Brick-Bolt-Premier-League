@@ -60,7 +60,17 @@ export default {
                 'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
                 border: 'hsl(var(--sidebar-border))',
                 ring: 'hsl(var(--sidebar-ring))'
-            }
+            },
+            'header-gradient-start': 'hsl(var(--header-gradient-start))',
+            'header-gradient-end': 'hsl(var(--header-gradient-end))',
+            'season-button-gradient-start': 'hsl(var(--season-button-gradient-start))',
+            'season-button-gradient-end': 'hsl(var(--season-button-gradient-end))',
+            'stat-card-green': 'hsl(var(--stat-card-green))',
+            'stat-card-green-foreground': 'hsl(var(--stat-card-green-foreground))',
+            'stat-card-amber': 'hsl(var(--stat-card-amber))',
+            'stat-card-amber-foreground': 'hsl(var(--stat-card-amber-foreground))',
+            'stat-card-red': 'hsl(var(--stat-card-red))',
+            'stat-card-red-foreground': 'hsl(var(--stat-card-red-foreground))',
         },
         borderRadius: {
             lg: 'var(--radius)',
@@ -83,9 +93,6 @@ export default {
             'accordion-up': {
                 from: {
                     height: 'var(--radix-accordion-content-height)'
-                },
-                to: {
-                    height: '0'
                 }
             }
         },
@@ -97,6 +104,6 @@ export default {
   },
   plugins: [
       require("tailwindcss-animate"),
-      require('tailwind-scrollbar')({ nocompatible: true }), // Add scrollbar plugin
+      require('tailwind-scrollbar')({ nocompatible: true }),
     ],
 } satisfies Config;

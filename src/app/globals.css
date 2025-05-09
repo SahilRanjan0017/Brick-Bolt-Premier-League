@@ -4,30 +4,54 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* Very Light Cool Gray */
-    --foreground: 215 25% 27%; /* Dark Cool Gray */
+    --background: 220 20% 96%; /* Light Grayish Blue - Page Background */
+    --foreground: 220 25% 25%; /* Dark Slate Blue - Main Text */
+
     --card: 0 0% 100%; /* White */
-    --card-foreground: 215 25% 27%; /* Dark Cool Gray */
+    --card-foreground: 220 25% 25%; /* Dark Slate Blue */
+
     --popover: 0 0% 100%; /* White */
-    --popover-foreground: 215 25% 27%; /* Dark Cool Gray */
-    --primary: 24 96% 53%; /* Bright Orange */
+    --popover-foreground: 220 25% 25%;
+
+    --primary: 217 80% 45%; /* Main Blue for Header gradient start, active elements */
     --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 210 85% 60%; /* Bright Blue */
+
+    --secondary: 217 89% 61%; /* Brighter Blue for active tab background */
     --secondary-foreground: 0 0% 100%; /* White */
-    --muted: 210 40% 96.1%; /* Light Cool Gray */
-    --muted-foreground: 215 8% 45%; /* Medium Cool Gray */
-    --accent: 210 40% 90%; /* Slightly Darker Light Cool Gray */
-    --accent-foreground: 215 25% 27%; /* Dark Cool Gray */
-    --destructive: 0 84.2% 60.2%; /* Red */
-    --destructive-foreground: 0 0% 98%; /* White */
-    --border: 214 32% 91%; /* Light Gray Border */
-    --input: 214 32% 91%; /* Light Gray Input */
-    --ring: 210 85% 65%; /* Slightly lighter blue for ring */
-    --chart-1: 24 96% 53%; /* Bright Orange */
+
+    --muted: 220 20% 92%; /* Lighter Gray for borders or subtle backgrounds */
+    --muted-foreground: 220 15% 45%; /* Medium Gray for less important text */
+
+    --accent: 30 100% 50%; /* Orange for Season button gradient start */
+    --accent-foreground: 0 0% 100%; /* White */
+    
+    --destructive: 0 72% 51%; /* Red */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 20% 88%; /* Light Gray Border for cards */
+    --input: 220 20% 88%;
+    --ring: 217 80% 55%; /* Focus Rings */
+
+    --chart-1: 30 100% 50%; /* Orange */
     --chart-2: 210 85% 60%; /* Bright Blue */
-    --chart-3: 180 60% 55%; /* Tealish Green */
+    --chart-3: 120 60% 50%; /* Green */
     --chart-4: 45 90% 55%; /* Yellow */
-    --chart-5: 300 70% 65%; /* Purple */
+    --chart-5: 260 70% 65%; /* Purple */
+
+    --header-gradient-start: 217 80% 35%;
+    --header-gradient-end: 210 70% 45%;
+    
+    --season-button-gradient-start: 45 100% 60%; /* Yellow */
+    --season-button-gradient-end: 35 100% 55%; /* Orange */
+
+    --stat-card-green: 145 63% 42%;
+    --stat-card-green-foreground: 0 0% 100%;
+    --stat-card-amber: 35 85% 55%;
+    --stat-card-amber-foreground: 0 0% 100%;
+    --stat-card-red: 0 72% 51%;
+    --stat-card-red-foreground: 0 0% 100%;
+
+
     --radius: 0.5rem;
 
     /* Font Variables */
@@ -36,34 +60,38 @@
   }
 
   .dark {
-    --background: 220 15% 10%; /* Very Dark Blue-Gray */
-    --foreground: 210 40% 98%; /* Very Light Cool Gray */
-    --card: 220 15% 15%; /* Darker Blue-Gray */
-    --card-foreground: 210 40% 98%; /* Very Light Cool Gray */
-    --popover: 220 15% 10%; /* Very Dark Blue-Gray */
-    --popover-foreground: 210 40% 98%; /* Very Light Cool Gray */
-    --primary: 24 90% 58%; /* Slightly Brighter Orange */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 210 80% 65%; /* Slightly Lighter Blue */
-    --secondary-foreground: 215 25% 27%; /* Dark Cool Gray */
-    --muted: 220 15% 20%; /* Dark Muted Blue-Gray */
-    --muted-foreground: 215 10% 65%; /* Lighter Cool Gray */
-    --accent: 220 15% 25%; /* Slightly Lighter Dark Muted Blue-Gray */
-    --accent-foreground: 210 40% 98%; /* Very Light Cool Gray */
-    --destructive: 0 70% 50%; /* Darker Red */
-    --destructive-foreground: 0 0% 98%; /* White */
-    --border: 215 15% 30%; /* Medium Dark Gray Border */
-    --input: 215 15% 30%; /* Medium Dark Gray Input */
-    --ring: 210 80% 70%; /* Brighter blue for ring */
-    --chart-1: 24 90% 58%; /* Slightly Brighter Orange */
-    --chart-2: 210 80% 65%; /* Slightly Lighter Blue */
-    --chart-3: 180 65% 60%; /* Tealish Green */
-    --chart-4: 45 95% 60%; /* Yellow */
-    --chart-5: 300 75% 70%; /* Purple */
+    --background: 220 15% 10%; 
+    --foreground: 210 40% 98%; 
+    --card: 220 15% 15%; 
+    --card-foreground: 210 40% 98%; 
+    --popover: 220 15% 10%; 
+    --popover-foreground: 210 40% 98%; 
+    --primary: 217 75% 50%; 
+    --primary-foreground: 0 0% 100%; 
+    --secondary: 217 80% 65%; 
+    --secondary-foreground: 215 25% 27%; 
+    --muted: 220 15% 20%; 
+    --muted-foreground: 215 10% 65%; 
+    --accent: 30 90% 55%; 
+    --accent-foreground: 0 0% 100%; 
+    --destructive: 0 65% 55%; 
+    --destructive-foreground: 0 0% 98%; 
+    --border: 215 15% 30%; 
+    --input: 215 15% 30%; 
+    --ring: 217 75% 60%; 
 
-    /* Re-apply font variables for dark mode if needed, though usually inherited */
-    --font-sans: "Inter", sans-serif;
-    --font-heading: "Lexend", sans-serif;
+    --header-gradient-start: 217 70% 30%;
+    --header-gradient-end: 210 60% 40%;
+
+    --season-button-gradient-start: 45 95% 65%;
+    --season-button-gradient-end: 35 95% 60%;
+
+    --stat-card-green: 145 58% 38%;
+    --stat-card-green-foreground: 0 0% 100%;
+    --stat-card-amber: 35 80% 50%;
+    --stat-card-amber-foreground: 0 0% 0%;
+    --stat-card-red: 0 68% 48%;
+    --stat-card-red-foreground: 0 0% 100%;
   }
 }
 

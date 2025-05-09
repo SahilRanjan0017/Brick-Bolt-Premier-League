@@ -1,10 +1,9 @@
 // src/services/mockData.ts
-import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, Project, OMTrendData, RAGCounts, Role } from '@/types';
+import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, Project, OMTrendData, RAGCounts, Role, DashboardStatsData, DashboardFilters, StatCardData } from '@/types';
 
 // --- Helper Functions ---
 
 const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts => {
-    // Simple mock logic: higher score = more green, fewer red/amber
     let green = 0, amber = 0, red = 0;
     const baseGreen = Math.floor(projectCount * (score / 100));
     const remaining = projectCount - baseGreen;
@@ -18,27 +17,25 @@ const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts
         amber = Math.floor(remaining * 0.6);
         red = projectCount - green - amber;
     } else {
-        green = Math.max(1, baseGreen - Math.floor(remaining * 0.5)); // Ensure at least 1 green if score > 0
+        green = Math.max(1, baseGreen - Math.floor(remaining * 0.5)); 
         red = Math.floor(remaining * 0.6);
         amber = projectCount - green - red;
     }
-     // Ensure non-negative counts and total matches projectCount
      green = Math.max(0, green);
      amber = Math.max(0, amber);
      red = Math.max(0, red);
      const total = green + amber + red;
      if (total !== projectCount) {
-        // Adjust green first if possible
         green += (projectCount - total);
-        if (green < 0) { // If adjustment made green negative, take from amber
+        if (green < 0) { 
             amber += green;
             green = 0;
         }
-        if(amber < 0) { // If amber adjustment went negative, take from red
+        if(amber < 0) { 
              red += amber;
              amber = 0;
         }
-        red = Math.max(0, red); // Ensure red isn't negative
+        red = Math.max(0, red); 
      }
 
 
@@ -47,9 +44,9 @@ const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts
 
 const getRandomRole = (index: number): Role => {
     const mod = index % 10;
-    if (mod < 1) return 'OM'; // ~10% OM
-    if (mod < 4) return 'TL'; // ~30% TL
-    return 'SPM'; // ~60% SPM
+    if (mod < 1) return 'OM'; 
+    if (mod < 4) return 'TL'; 
+    return 'SPM'; 
 };
 
 const assignManager = (role: Role, omList: string[], tlList: string[]): string | undefined => {
@@ -59,23 +56,20 @@ const assignManager = (role: Role, omList: string[], tlList: string[]): string |
 }
 
 // --- Mock Leaderboard Data ---
-// Generate more entries for better role distribution
 const numEntries = 30;
 const cities = ['BLR_A', 'BLR_B', 'CHN', 'NCR', 'HYD'];
 const rawLeaderboard: Omit<LeaderboardEntry, 'rank' | 'ragStatus' | 'manages' | 'reportsTo' | 'projectCount' | 'rankChange'>[] = Array.from({ length: numEntries }, (_, i) => {
-    const score = Math.floor(50 + Math.random() * 49); // Score 50-98
+    const score = Math.floor(50 + Math.random() * 49); 
     return {
         id: `emp${String(i + 1).padStart(3, '0')}`,
         name: `Employee ${String(i + 1).padStart(3, '0')}`,
         city: cities[i % cities.length],
         score: score,
-        // projectCount: Math.floor(5 + Math.random() * 15), // Assign later based on role
-        role: getRandomRole(i), // Assign role
+        role: getRandomRole(i), 
         profilePic: `https://picsum.photos/100/100?random=${i + 1}`
     };
 });
 
-// Assign hierarchy and project counts based on roles
 const oms = rawLeaderboard.filter(e => e.role === 'OM');
 const tls = rawLeaderboard.filter(e => e.role === 'TL');
 const spms = rawLeaderboard.filter(e => e.role === 'SPM');
@@ -87,36 +81,36 @@ export const mockLeaderboard: LeaderboardEntry[] = rawLeaderboard.map((entry) =>
     let reportsTo: string | undefined = undefined;
     let manages: LeaderboardEntry['manages'] | undefined = undefined;
     let projectCount: number | undefined = undefined;
+    const rankChange = Math.floor(Math.random() * 5) - 2; // -2 to +2
 
     if (entry.role === 'OM') {
-        // OM manages TLs and SPMs (mock assignment)
         manages = {
-            tls: tls.filter(tl => tl.city === entry.city && Math.random() > 0.3).map(tl => tl.id), // Assign some TLs in the same city
-            spms: spms.filter(spm => spm.city === entry.city && Math.random() > 0.4).map(spm => spm.id) // Assign some SPMs in the same city
+            tls: tls.filter(tl => tl.city === entry.city && Math.random() > 0.3).map(tl => tl.id), 
+            spms: spms.filter(spm => spm.city === entry.city && Math.random() > 0.4).map(spm => spm.id) 
         };
-        // OMs don't directly manage projects in this model
     } else if (entry.role === 'TL') {
-        reportsTo = assignManager(entry.role, omIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city), []); // Report to OM in same city
-        projectCount = Math.floor(8 + Math.random() * 8); // TLs manage more projects
+        reportsTo = assignManager(entry.role, omIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city), []); 
+        projectCount = Math.floor(8 + Math.random() * 8); 
     } else if (entry.role === 'SPM') {
         const cityTLs = tlIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city);
-        reportsTo = assignManager(entry.role, [], cityTLs); // Report to TL in same city
-        projectCount = Math.floor(3 + Math.random() * 5); // SPMs manage fewer projects
+        reportsTo = assignManager(entry.role, [], cityTLs); 
+        projectCount = Math.floor(3 + Math.random() * 5); 
     }
 
     return {
         ...entry,
-        rank: 0, // Will be calculated later
+        rank: 0, 
         ragStatus: calculateRagCounts(entry.score, projectCount ?? 0),
         projectCount: projectCount,
         manages: manages,
         reportsTo: reportsTo,
+        rankChange: rankChange,
     };
-}).sort((a, b) => b.score - a.score) // Sort by score
-  .map((entry, index) => ({ ...entry, rank: index + 1 })); // Assign ranks
+}).sort((a, b) => b.score - a.score) 
+  .map((entry, index) => ({ ...entry, rank: index + 1 })); 
 
 
-// --- Mock Historical Winners (Keep simple for now) ---
+// --- Mock Historical Winners ---
 export const mockHistoricalWinners: HistoricalWinner[] = Array.from({ length: 8 }, (_, i) => {
     const week = 30 - i;
     const winnerIndex = Math.floor(Math.random() * mockLeaderboard.length);
@@ -174,7 +168,7 @@ const calculateRoleProjectCount = (personnel: LeaderboardEntry[], role: Role): n
 
 export const mockCityDetails: Record<string, CityData> = cities.reduce((acc, cityId) => {
     const cityPersonnel = mockLeaderboard.filter(p => p.city === cityId);
-    const cityProjects = generateProjectsForCity(cityId, cityPersonnel); // Generate projects based on city personnel
+    const cityProjects = generateProjectsForCity(cityId, cityPersonnel); 
 
     const tlRag = calculateRoleRagSummary(cityPersonnel, 'TL');
     const spmRag = calculateRoleRagSummary(cityPersonnel, 'SPM');
@@ -184,7 +178,7 @@ export const mockCityDetails: Record<string, CityData> = cities.reduce((acc, cit
 
     acc[cityId] = {
         id: cityId,
-        name: `City ${cityId}`, // Placeholder name
+        name: `City ${cityId.replace('_', ' ')}`, 
         ragBreakdown: {
             tl: tlRag,
             spm: spmRag,
@@ -194,8 +188,7 @@ export const mockCityDetails: Record<string, CityData> = cities.reduce((acc, cit
             spm: spmProjects,
             total: tlProjects + spmProjects,
         },
-        personnel: cityPersonnel, // Include personnel list for potential display
-        // performanceHistory can be added similarly if needed
+        personnel: cityPersonnel, 
     };
     return acc;
 }, {} as Record<string, CityData>);
@@ -203,33 +196,30 @@ export const mockCityDetails: Record<string, CityData> = cities.reduce((acc, cit
 
 // --- Mock OM Trend Data ---
 const generateWeeklyScore = (baseScore: number): number => {
-    // Simulate score fluctuation around the base score
     return Math.max(40, Math.min(99, baseScore + Math.floor(Math.random() * 21) - 10));
 }
 
 export const mockOMTrends: OMTrendData[] = oms.map(om => {
     const weeklyScores = Array.from({ length: 8 }, (_, i) => ({
-        week: 30 - 7 + i, // Last 8 weeks ending week 30
-        // Mock aggregated score based on OM's own score + some noise
+        week: 30 - 7 + i, 
         score: generateWeeklyScore(om.score),
     }));
 
-    // Mock subordinate ranks (optional, basic example)
     const subordinateRanks = Array.from({ length: 8 }, (_, i) => ({
         week: 30 - 7 + i,
-        tlRank: Math.floor(Math.random() * 10) + 1, // Placeholder rank
-        spmRank: Math.floor(Math.random() * 20) + 1, // Placeholder rank
+        tlRank: Math.floor(Math.random() * 10) + 1, 
+        spmRank: Math.floor(Math.random() * 20) + 1, 
     }));
 
     return {
         omId: om.id,
         omName: om.name,
         weeklyScores: weeklyScores,
-        subordinateRanks: subordinateRanks, // Include placeholder ranks
+        subordinateRanks: subordinateRanks, 
     };
 });
 
-// --- Mock Reward Details (Assign based on top ranks in roles) ---
+// --- Mock Reward Details ---
 const getTopPerformerId = (role: Role): string | null => {
     const sortedByRole = mockLeaderboard.filter(p => p.role === role).sort((a,b) => b.score - a.score);
     return sortedByRole.length > 0 ? sortedByRole[0].id : null;
@@ -237,25 +227,21 @@ const getTopPerformerId = (role: Role): string | null => {
 
 export const mockRewardDetails: RewardDetails = {
     awards: {
-        // Assign Employee of the Month to top OM for now
         employeeOfMonth: {
             title: "Manager of the Month (OM)",
             awardeeId: getTopPerformerId('OM'),
         },
-        // Assign City Champion to top TL
         cityChampion: {
             title: "Lead Champion (TL)",
              awardeeId: getTopPerformerId('TL'),
         },
-         // Assign Innovation Award to top SPM
         innovationAward: {
             title: "Execution Excellence (SPM)",
              awardeeId: getTopPerformerId('SPM'),
         },
     },
-     // Keep incentives generic for now
     incentives: {
-        ops: [ // Could represent OM/TL/SPM combined or needs splitting
+        ops: [ 
             "Metric: Overall Team RAG Score Improvement",
             "Metric: Client Escalation Reduction",
             "Metric: Cross-functional Collaboration",
@@ -270,4 +256,38 @@ export const mockRewardDetails: RewardDetails = {
         quarterlyAwards: "Top performers in OM, TL, and SPM categories recognized quarterly.",
         annualConference: "Highest achievers across all roles invited to the annual leadership conference.",
     }
+};
+
+// --- Mock Dashboard Stats Data ---
+export const mockDashboardStats = (filters?: DashboardFilters): DashboardStatsData => {
+  // Simple mock data generation, can be made more complex based on filters
+  const active = 600 + Math.floor(Math.random() * 51) - 25; // e.g. 625
+  const green = Math.floor(active * (0.35 + Math.random() * 0.1)); // e.g. 248
+  const amber = Math.floor(active * (0.20 + Math.random() * 0.1)); // e.g. 150
+  const red = active - green - amber; // e.g. 227
+
+  const trendActive = Math.floor(Math.random() * 21) - 10;
+  const trendRed = Math.floor(Math.random() * 9) - 4;
+
+
+  return {
+    activeProjects: {
+      value: active,
+      trend: `${trendActive >= 0 ? '+' : ''}${trendActive} from last month`,
+      trendDirection: trendActive >=0 ? (trendActive === 0 ? 'neutral' : 'up') : 'down',
+    },
+    greenProjects: {
+      value: green,
+      percentage: `${Math.round((green/active)*100)}% of total`,
+    },
+    amberProjects: {
+      value: amber,
+      percentage: `${Math.round((amber/active)*100)}% of total`,
+    },
+    redProjects: {
+      value: red,
+      trend: `${trendRed >= 0 ? '+' : ''}${trendRed} from last month`,
+      trendDirection: trendRed >=0 ? (trendRed === 0 ? 'neutral' : 'up') : 'down',
+    },
+  };
 };
