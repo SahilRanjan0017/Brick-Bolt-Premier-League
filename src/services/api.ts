@@ -1,7 +1,7 @@
 // src/services/api.ts
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, getSupabaseInitializationError } from '@/lib/supabaseClient';
 import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, OMTrendData, Role, LeaderboardPageData, CityViewsPageData, DashboardStatsData, DashboardFilters, RAGCounts, RecentActivityItem, StatCardData } from '@/types';
-import { ListChecks, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'; // For StatCard icons
+import { ListChecks, CheckCircle2, AlertTriangle, XCircle, UserCog, Users, UserCheck } from 'lucide-react'; // For StatCard icons & default AwardCard icons
 
 // --- Helper Functions (moved or adapted from mockData) ---
 const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts => {
@@ -20,7 +20,7 @@ const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts
         amber = Math.floor(remaining * 0.6);
         red = projectCount - green - amber;
     } else {
-        green = Math.max(1, baseGreen - Math.floor(remaining * 0.5));
+        green = Math.max(1, baseGreen - Math.floor(remaining * 0.5)); // Ensure at least some green if possible
         red = Math.floor(remaining * 0.6);
         amber = projectCount - green - red;
     }
@@ -28,46 +28,58 @@ const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts
      amber = Math.max(0, amber);
      red = Math.max(0, red);
      const total = green + amber + red;
-     if (total !== projectCount) {
-        green += (projectCount - total);
-        if (green < 0) {
+     if (total !== projectCount) { // Adjust if sum doesn't match projectCount
+        green += (projectCount - total); // Try to adjust green first
+        if (green < 0) { // If green becomes negative, adjust amber
             amber += green;
             green = 0;
         }
-        if(amber < 0) {
+        if(amber < 0) { // If amber becomes negative, adjust red
              red += amber;
              amber = 0;
         }
-        red = Math.max(0, red);
+        red = Math.max(0, red); // Ensure red is not negative
      }
     return { green, amber, red };
 };
 
+const getDefaultStatCard = (title: string, icon: React.ElementType): StatCardData => ({
+    title,
+    value: 0,
+    trend: "N/A",
+    trendDirection: "neutral",
+    percentage: "0%",
+    icon,
+    iconBgColor: 'bg-muted',
+    iconTextColor: 'text-muted-foreground',
+});
+
+
 // --- Supabase API Calls ---
 
-/**
- * Fetches the complete leaderboard data from Supabase.
- * Assumes a table 'leaderboard_entries' with columns matching LeaderboardEntry.
- * RAG status and rank might need to be calculated/joined if not directly in the table.
- */
 export const getFullLeaderboard = async (): Promise<LeaderboardEntry[]> => {
+    if (!supabase) {
+        console.warn(`API: Supabase client not initialized. ${getSupabaseInitializationError()} Returning empty data for getFullLeaderboard.`);
+        return [];
+    }
     console.log(`API: Fetching full leaderboard data from Supabase...`);
     const { data, error } = await supabase
-        .from('leaderboard_entries') // ADJUST TABLE NAME
+        .from('leaderboard_entries')
         .select('*')
         .order('score', { ascending: false });
 
     if (error) {
         console.error("Supabase error fetching full leaderboard:", error);
-        throw new Error("Failed to fetch full leaderboard data");
+        throw new Error(`Failed to fetch full leaderboard data: ${error.message}`);
     }
 
     const processedData = data.map((entry, index) => ({
         ...entry,
+        id: String(entry.id), // Ensure id is string
         rank: index + 1,
-        ragStatus: calculateRagCounts(entry.score, entry.project_count || 0), // Assuming project_count column
+        ragStatus: calculateRagCounts(entry.score, entry.project_count || 0),
         profilePic: entry.profile_pic || `https://picsum.photos/100/100?random=${entry.id}`,
-        rankChange: entry.rank_change === undefined ? Math.floor(Math.random() * 7) - 3 : entry.rank_change, // Mock rankChange if not in DB
+        rankChange: entry.rank_change === undefined || entry.rank_change === null ? Math.floor(Math.random() * 7) - 3 : entry.rank_change,
     }));
     console.log("API: Full leaderboard data fetched and processed successfully.");
     return processedData;
@@ -75,9 +87,13 @@ export const getFullLeaderboard = async (): Promise<LeaderboardEntry[]> => {
 
 
 export const getLeaderboardByRole = async (role: Role, limit?: number): Promise<LeaderboardEntry[]> => {
+    if (!supabase) {
+        console.warn(`API: Supabase client not initialized. ${getSupabaseInitializationError()} Returning empty data for getLeaderboardByRole (${role}).`);
+        return [];
+    }
     console.log(`API: Fetching leaderboard data for role: ${role} ${limit ? `(limit: ${limit})` : ''} from Supabase...`);
     let query = supabase
-        .from('leaderboard_entries') // ADJUST TABLE NAME
+        .from('leaderboard_entries')
         .select('*')
         .eq('role', role)
         .order('score', { ascending: false });
@@ -90,15 +106,16 @@ export const getLeaderboardByRole = async (role: Role, limit?: number): Promise<
 
     if (error) {
         console.error(`Supabase error fetching leaderboard for role ${role}:`, error);
-        throw new Error(`Failed to fetch leaderboard data for role ${role}`);
+        throw new Error(`Failed to fetch leaderboard data for role ${role}: ${error.message}`);
     }
     
     const processedData = data.map((entry, index) => ({
         ...entry,
-        rank: index + 1, // Rank within this subset
+        id: String(entry.id),
+        rank: index + 1,
         ragStatus: calculateRagCounts(entry.score, entry.project_count || 0),
         profilePic: entry.profile_pic || `https://picsum.photos/100/100?random=${entry.id}`,
-        rankChange: entry.rank_change === undefined ? Math.floor(Math.random() * 7) - 3 : entry.rank_change,
+        rankChange: entry.rank_change === undefined || entry.rank_change === null ? Math.floor(Math.random() * 7) - 3 : entry.rank_change,
     }));
     console.log(`API: Leaderboard data for ${role} fetched and processed successfully.`);
     return processedData;
@@ -106,40 +123,46 @@ export const getLeaderboardByRole = async (role: Role, limit?: number): Promise<
 
 
 export const getOMTrendData = async (): Promise<OMTrendData[]> => {
+    if (!supabase) {
+        console.warn(`API: Supabase client not initialized. ${getSupabaseInitializationError()} Returning empty data for getOMTrendData.`);
+        return [];
+    }
     console.log(`API: Fetching 8-week trend data for OMs from Supabase...`);
-    // Assumes an 'om_trends' table with om_id, om_name, and weekly_scores (JSONB array), subordinate_ranks (JSONB array)
     const { data, error } = await supabase
-        .from('om_trends') // ADJUST TABLE NAME
+        .from('om_trends')
         .select('om_id, om_name, weekly_scores, subordinate_ranks');
 
     if (error) {
         console.error("Supabase error fetching OM trend data:", error);
-        throw new Error("Failed to fetch OM trend data");
+        throw new Error(`Failed to fetch OM trend data: ${error.message}`);
     }
     console.log("API: OM trend data fetched successfully.");
     return data.map(item => ({
-        omId: item.om_id,
+        omId: String(item.om_id),
         omName: item.om_name,
-        weeklyScores: item.weekly_scores,
-        subordinateRanks: item.subordinate_ranks,
+        weeklyScores: Array.isArray(item.weekly_scores) ? item.weekly_scores : [], // Ensure weekly_scores is an array
+        subordinateRanks: Array.isArray(item.subordinate_ranks) ? item.subordinate_ranks : [], // Ensure subordinate_ranks is an array
     }));
 };
 
 export const getHistoricalWinners = async (role?: Role): Promise<HistoricalWinner[]> => {
+    if (!supabase) {
+        console.warn(`API: Supabase client not initialized. ${getSupabaseInitializationError()} Returning empty data for getHistoricalWinners.`);
+        return [];
+    }
     console.log(`API: Fetching historical winners ${role ? `for ${role}` : 'overall'} from Supabase...`);
-    // Assumes a 'historical_winners' table with role, week, name, city, profile_pic columns
-    let query = supabase.from('historical_winners').select('*'); // ADJUST TABLE NAME
+    let query = supabase.from('historical_winners').select('*'); 
 
     if (role) {
         query = query.eq('role', role);
     }
-    query = query.order('week', { ascending: false }).limit(8); // Get last 8 weeks for the role
+    query = query.order('week', { ascending: false }).limit(8);
 
     const { data, error } = await query;
 
     if (error) {
         console.error("Supabase error fetching historical winners:", error);
-        throw new Error("Failed to fetch historical winners");
+        throw new Error(`Failed to fetch historical winners: ${error.message}`);
     }
      console.log("API: Historical winners fetched successfully.");
     return data.map(winner => ({
@@ -152,26 +175,28 @@ export const getHistoricalWinners = async (role?: Role): Promise<HistoricalWinne
 
 
 export const getCityViewsPageData = async (): Promise<CityViewsPageData> => {
+     if (!supabase) {
+        console.warn(`API: Supabase client not initialized. ${getSupabaseInitializationError()} Returning empty data for getCityViewsPageData.`);
+        return {};
+    }
     console.log("API: Fetching consolidated City Views Page data from Supabase...");
-    // This is more complex. It might involve fetching all relevant leaderboard entries
-    // and then processing them in code, or using a Supabase Edge Function / View.
-    // For simplicity, let's assume we fetch all leaderboard entries and process.
-
     const { data: allPersonnel, error: personnelError } = await supabase
-        .from('leaderboard_entries') // ADJUST TABLE NAME
+        .from('leaderboard_entries')
         .select('*');
 
     if (personnelError) {
         console.error("Supabase error fetching personnel for city views:", personnelError);
-        throw new Error("Failed to fetch personnel for city views");
+        throw new Error(`Failed to fetch personnel for city views: ${personnelError.message}`);
     }
 
-    const cities = [...new Set(allPersonnel.map(p => p.city))]; // Get unique cities
+    const cities = [...new Set(allPersonnel.map(p => p.city))];
     const cityViewsData: CityViewsPageData = {};
 
     for (const cityId of cities) {
+        if (!cityId) continue; // Skip if cityId is null or undefined
         const cityPersonnel = allPersonnel.filter(p => p.city === cityId).map(entry => ({
             ...entry,
+            id: String(entry.id),
             ragStatus: calculateRagCounts(entry.score, entry.project_count || 0),
             profilePic: entry.profile_pic || `https://picsum.photos/100/100?random=${entry.id}`,
         }));
@@ -205,7 +230,7 @@ export const getCityViewsPageData = async (): Promise<CityViewsPageData> => {
 
         cityViewsData[cityId] = {
             id: cityId,
-            name: `City ${cityId.replace('_', ' ')}`, // Or fetch city name from a 'cities' table
+            name: `City ${cityId.replace('_', ' ')}`,
             ragBreakdown: {
                 tl: tlRag,
                 spm: spmRag,
@@ -224,56 +249,76 @@ export const getCityViewsPageData = async (): Promise<CityViewsPageData> => {
 
 
 export const getRewardDetails = async (): Promise<RewardDetails> => {
-    console.log("API: Fetching reward details from Supabase...");
-    // Assumes a 'reward_configurations' table, possibly with a single row or specific keys.
-    // Example: one row with columns like 'awards_config' (JSONB), 'incentives_ops' (array), 'programs_config' (JSONB)
-    const { data, error } = await supabase
-        .from('reward_configurations') // ADJUST TABLE NAME
-        .select('*')
-        .limit(1) // Assuming one config row
-        .single(); // Expect a single row
-
-    if (error) {
-        console.error("Supabase error fetching reward details:", error);
-        throw new Error("Failed to fetch reward details");
-    }
-
-    if (!data) {
-        throw new Error("No reward configuration found in Supabase.");
-    }
-    
-    // Adapt this based on your actual table structure
-    const rewardDetails: RewardDetails = {
-        awards: data.awards_config || { // Assuming awards_config is a JSONB column
+    const defaultRewardDetails: RewardDetails = {
+        awards: {
             employeeOfMonth: { title: "Manager of the Month", awardeeId: null },
             cityChampion: { title: "Lead Champion", awardeeId: null },
             innovationAward: { title: "Execution Excellence", awardeeId: null },
         },
         incentives: {
-            ops: data.incentives_ops_metrics || [], // Assuming an array column
-            vm: data.incentives_vm_metrics || [],   // Assuming an array column
+            ops: ["Ops incentive details unavailable due to configuration issue."],
+            vm: ["VM incentive details unavailable due to configuration issue."],
         },
-        programs: data.programs_config || { // Assuming programs_config is a JSONB column
-            quarterlyAwards: "Details unavailable.",
-            annualConference: "Details unavailable.",
+        programs: {
+            quarterlyAwards: "Quarterly awards details unavailable.",
+            annualConference: "Annual conference details unavailable.",
         }
     };
 
-    // You might need to fetch top performers separately to populate awardeeId if not stored directly
-    // For simplicity, current mock data logic for awardeeId uses local leaderboard data.
-    // This part may need adjustment depending on how you store/determine awardees.
-    // Example: fetch top OM/TL/SPM if needed for awardeeId
-    const [leaderboard] = await Promise.all([getFullLeaderboard()]); // Fetch once if needed across details
+    if (!supabase) {
+        console.warn(`API: Supabase client not initialized. ${getSupabaseInitializationError()} Returning default data for getRewardDetails.`);
+        return defaultRewardDetails;
+    }
+    console.log("API: Fetching reward details from Supabase...");
+    
+    const { data, error } = await supabase
+        .from('reward_configurations')
+        .select('*')
+        .limit(1)
+        .single();
 
-    const getTopPerformerId = (role: Role): string | null => {
-      const sortedByRole = leaderboard.filter(p => p.role === role).sort((a,b) => b.score - a.score);
-      return sortedByRole.length > 0 ? sortedByRole[0].id : null;
+    if (error) {
+        console.error("Supabase error fetching reward details:", error);
+        // Return default data on error to prevent crash, but log it.
+        return { ...defaultRewardDetails, programs: {...defaultRewardDetails.programs, quarterlyAwards: `Error fetching: ${error.message}` }};
     }
 
-    rewardDetails.awards.employeeOfMonth.awardeeId = data.awards_config?.employeeOfMonth?.awardeeId ?? getTopPerformerId('OM');
-    rewardDetails.awards.cityChampion.awardeeId = data.awards_config?.cityChampion?.awardeeId ?? getTopPerformerId('TL');
-    rewardDetails.awards.innovationAward.awardeeId = data.awards_config?.innovationAward?.awardeeId ?? getTopPerformerId('SPM');
-
+    if (!data) {
+        console.warn("API: No reward configuration found in Supabase. Returning default data.");
+        return defaultRewardDetails;
+    }
+    
+    const rewardDetails: RewardDetails = {
+      awards: {
+          employeeOfMonth: { title: data.awards_config?.employeeOfMonth?.title || "Manager of the Month", awardeeId: data.awards_config?.employeeOfMonth?.awardeeId || null },
+          cityChampion: { title: data.awards_config?.cityChampion?.title || "Lead Champion", awardeeId: data.awards_config?.cityChampion?.awardeeId || null },
+          innovationAward: { title: data.awards_config?.innovationAward?.title || "Execution Excellence", awardeeId: data.awards_config?.innovationAward?.awardeeId || null },
+      },
+      incentives: {
+          ops: Array.isArray(data.incentives_ops_metrics) ? data.incentives_ops_metrics : defaultRewardDetails.incentives.ops,
+          vm: Array.isArray(data.incentives_vm_metrics) ? data.incentives_vm_metrics : defaultRewardDetails.incentives.vm,
+      },
+      programs: {
+          quarterlyAwards: data.programs_config?.quarterlyAwards || defaultRewardDetails.programs.quarterlyAwards,
+          annualConference: data.programs_config?.annualConference || defaultRewardDetails.programs.annualConference,
+      }
+    };
+    
+    // If awardeeIds are null in config, attempt to populate them from leaderboard
+    if (rewardDetails.awards.employeeOfMonth.awardeeId === null || rewardDetails.awards.cityChampion.awardeeId === null || rewardDetails.awards.innovationAward.awardeeId === null) {
+        try {
+            const leaderboard = await getFullLeaderboard(); // This already checks for supabase !== null
+            const getTopPerformerId = (role: Role): string | null => {
+              const sortedByRole = leaderboard.filter(p => p.role === role).sort((a,b) => b.score - a.score);
+              return sortedByRole.length > 0 ? sortedByRole[0].id : null;
+            };
+            if(rewardDetails.awards.employeeOfMonth.awardeeId === null) rewardDetails.awards.employeeOfMonth.awardeeId = getTopPerformerId('OM');
+            if(rewardDetails.awards.cityChampion.awardeeId === null) rewardDetails.awards.cityChampion.awardeeId = getTopPerformerId('TL');
+            if(rewardDetails.awards.innovationAward.awardeeId === null) rewardDetails.awards.innovationAward.awardeeId = getTopPerformerId('SPM');
+        } catch (e) {
+            console.warn("API: Could not fetch leaderboard to populate awardee IDs for rewards.", e);
+        }
+    }
 
     console.log("API: Reward details fetched successfully.");
     return rewardDetails;
@@ -281,9 +326,32 @@ export const getRewardDetails = async (): Promise<RewardDetails> => {
 
 
 export const getLeaderboardPageData = async (): Promise<LeaderboardPageData> => {
+    const defaultData: LeaderboardPageData = {
+        topPerformers: { om: [], tl: [], spm: [] },
+        omTrends: [],
+        fullLeaderboard: [],
+        historicalWinnersOM: [],
+        historicalWinnersTL: [],
+        historicalWinnersSPM: [],
+        dashboardStats: {
+            activeProjects: getDefaultStatCard("Active Projects", ListChecks),
+            greenProjects: getDefaultStatCard("Green Projects", CheckCircle2),
+            amberProjects: getDefaultStatCard("Amber Projects", AlertTriangle),
+            redProjects: getDefaultStatCard("Red Projects", XCircle),
+            leaderboard: [],
+            recentActivities: [],
+        },
+    };
+
+    if (!supabase) {
+        console.warn(`API: Supabase client not initialized. ${getSupabaseInitializationError()} Returning default data for getLeaderboardPageData.`);
+        return defaultData;
+    }
+
     console.log("API: Fetching consolidated Leaderboard Page data from Supabase...");
     try {
-        const [topOMs, topTLs, topSPMs, omTrendsData, fullLeaderboardData, histWinnersOM, histWinnersTL, histWinnersSPM, dashboardStatsData] = await Promise.all([
+        // All these internal calls will also check for supabase != null and return empty if needed
+        const [topOMs, topTLs, topSPMs, omTrendsData, fullLeaderboardData, histWinnersOM, histWinnersTL, histWinnersSPM, dashboardStatsResult] = await Promise.all([
             getLeaderboardByRole('OM', 3),
             getLeaderboardByRole('TL', 3),
             getLeaderboardByRole('SPM', 3),
@@ -292,7 +360,7 @@ export const getLeaderboardPageData = async (): Promise<LeaderboardPageData> => 
             getHistoricalWinners('OM'),
             getHistoricalWinners('TL'),
             getHistoricalWinners('SPM'),
-            getDashboardStats({ role: 'All Roles', week: 'This Week' }) // Default filters for scoreboard on leaderboard
+            getDashboardStats({ role: 'All Roles', week: 'This Week' })
         ]);
 
         console.log("API: Consolidated Leaderboard Page data fetched successfully.");
@@ -304,14 +372,13 @@ export const getLeaderboardPageData = async (): Promise<LeaderboardPageData> => 
             },
             omTrends: omTrendsData,
             fullLeaderboard: fullLeaderboardData,
-            historicalWinnersOM: histWinnersOM, // Use specific role winners
+            historicalWinnersOM: histWinnersOM,
             historicalWinnersTL: histWinnersTL,
             historicalWinnersSPM: histWinnersSPM,
-            dashboardStats: dashboardStatsData,
+            dashboardStats: dashboardStatsResult,
         };
     } catch (error) {
         console.error("API Error: Failed to fetch consolidated leaderboard data.", error);
-        // To provide more specific error, check error type if possible
         if (error instanceof Error) {
              throw new Error(`Failed to fetch leaderboard page data: ${error.message}`);
         }
@@ -321,11 +388,24 @@ export const getLeaderboardPageData = async (): Promise<LeaderboardPageData> => 
 
 
 export const getDashboardStats = async (filters?: DashboardFilters): Promise<DashboardStatsData> => {
+    const defaultStats: DashboardStatsData = {
+        activeProjects: getDefaultStatCard("Active Projects", ListChecks),
+        greenProjects: getDefaultStatCard("Green Projects", CheckCircle2),
+        amberProjects: getDefaultStatCard("Amber Projects", AlertTriangle),
+        redProjects: getDefaultStatCard("Red Projects", XCircle),
+        leaderboard: [],
+        recentActivities: [],
+    };
+    
+    if (!supabase) {
+        console.warn(`API: Supabase client not initialized. ${getSupabaseInitializationError()} Returning default data for getDashboardStats.`);
+        return defaultStats;
+    }
+
     console.log(`API: Fetching dashboard stats with filters: ${JSON.stringify(filters)} from Supabase...`);
 
-    // Fetch leaderboard data (can be filtered by city)
     let leaderboardQuery = supabase
-        .from('leaderboard_entries') // ADJUST TABLE NAME
+        .from('leaderboard_entries')
         .select('*')
         .order('score', { ascending: false });
 
@@ -337,55 +417,44 @@ export const getDashboardStats = async (filters?: DashboardFilters): Promise<Das
 
     if (leaderboardError) {
         console.error("Supabase error fetching leaderboard for dashboard:", leaderboardError);
-        throw new Error("Failed to fetch leaderboard data for dashboard");
+        // Return default on error to avoid crashing UI
+        return { ...defaultStats, leaderboard: [], recentActivities: defaultStats.recentActivities }; 
     }
 
     const processedLeaderboard = leaderboardData.map((entry, index) => ({
         ...entry,
+        id: String(entry.id),
         rank: index + 1,
         ragStatus: calculateRagCounts(entry.score, entry.project_count || 0),
         profilePic: entry.profile_pic || `https://picsum.photos/100/100?random=${entry.id}`,
-        rankChange: entry.rank_change === undefined ? Math.floor(Math.random() * 7) - 3 : entry.rank_change,
+        rankChange: entry.rank_change === undefined || entry.rank_change === null ? Math.floor(Math.random() * 7) - 3 : entry.rank_change,
     }));
 
-
-    // Fetch recent activities
     const { data: recentActivitiesData, error: activitiesError } = await supabase
-        .from('recent_activities') // ADJUST TABLE NAME
+        .from('recent_activities')
         .select('*')
-        .order('created_at', { ascending: false }) // Assuming a 'created_at' timestamp
+        .order('created_at', { ascending: false })
         .limit(5);
 
     if (activitiesError) {
         console.error("Supabase error fetching recent activities:", activitiesError);
-        throw new Error("Failed to fetch recent activities");
+        // Return default on error
+         return { ...defaultStats, leaderboard: processedLeaderboard, recentActivities: [] };
     }
     
     const recentActivities: RecentActivityItem[] = recentActivitiesData.map(act => ({
-        id: act.id,
+        id: String(act.id),
         type: act.type,
         description: act.description,
-        time: act.time_description || new Date(act.created_at).toLocaleTimeString(), // Use time_description or format created_at
-        details: act.details_json, // Assuming details are stored as JSONB
+        time: act.time_description || new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        details: act.details_json,
     }));
 
-
-    // Calculate StatCardData (this is a simplification, real data might come from aggregated project stats)
-    // This part heavily relies on how you store project data and RAG statuses in Supabase.
-    // For now, we'll derive some stats from the fetched leaderboard or use placeholders.
-    // You'll need a 'projects' table or similar to get accurate counts.
-    
-    // Placeholder counts if 'projects' table isn't queried
     let totalActiveProjects = 0;
     let totalGreenProjects = 0;
     let totalAmberProjects = 0;
     let totalRedProjects = 0;
-
-    // If you have a 'projects' table:
-    // const { data: projectsData, error: projectsError } = await supabase.from('projects').select('status, city, role_managed_by');
-    // Then aggregate counts based on projectsData and filters.
     
-    // For now, let's derive from leaderboard project counts as a rough estimate:
     let relevantPersonnel = processedLeaderboard;
     if (filters?.role && filters.role !== 'All Roles') {
         relevantPersonnel = processedLeaderboard.filter(p => p.role === filters.role);
@@ -399,30 +468,28 @@ export const getDashboardStats = async (filters?: DashboardFilters): Promise<Das
         totalRedProjects += rag.red;
     });
     
-    // Adjust if counts go negative or don't sum up, though calculateRagCounts should handle this for individuals
     totalActiveProjects = Math.max(0, totalActiveProjects);
     totalGreenProjects = Math.max(0, totalGreenProjects);
     totalAmberProjects = Math.max(0, totalAmberProjects);
     totalRedProjects = Math.max(0, totalRedProjects);
 
-    // Ensure breakdown doesn't exceed total if derived this way
     if ((totalGreenProjects + totalAmberProjects + totalRedProjects) > totalActiveProjects && totalActiveProjects > 0) {
         const sumRag = totalGreenProjects + totalAmberProjects + totalRedProjects;
         totalGreenProjects = Math.floor(totalGreenProjects * totalActiveProjects / sumRag);
         totalAmberProjects = Math.floor(totalAmberProjects * totalActiveProjects / sumRag);
         totalRedProjects = totalActiveProjects - totalGreenProjects - totalAmberProjects;
+         totalRedProjects = Math.max(0, totalRedProjects); // Ensure red is not negative after adjustment
     } else if (totalActiveProjects === 0) {
         totalGreenProjects = 0;
         totalAmberProjects = 0;
         totalRedProjects = 0;
     }
 
-
     const dashboardStats: DashboardStatsData = {
         activeProjects: {
             title: "Active Projects",
             value: totalActiveProjects,
-            trend: `+${Math.floor(totalActiveProjects * 0.02)} from last month`, // Example trend
+            trend: `+${Math.floor(totalActiveProjects * 0.02)} from last month`,
             trendDirection: 'up',
             icon: ListChecks,
             iconBgColor: 'bg-blue-100 dark:bg-blue-900/50',
@@ -449,8 +516,8 @@ export const getDashboardStats = async (filters?: DashboardFilters): Promise<Das
         redProjects: {
             title: "Red Projects",
             value: totalRedProjects,
-            trend: `-${Math.floor(totalRedProjects * 0.01)} from last month`, // Example trend
-            trendDirection: 'down',
+            trend: totalRedProjects > 0 ? `-${Math.floor(totalRedProjects * 0.01)} from last month` : undefined,
+            trendDirection: totalRedProjects > 0 && Math.floor(totalRedProjects * 0.01) > 0 ? 'down' : 'neutral',
             percentage: totalActiveProjects > 0 ? `${Math.round((totalRedProjects / totalActiveProjects) * 100)}%` : '0%',
             icon: XCircle,
             iconBgColor: 'bg-red-100 dark:bg-red-900/50',
