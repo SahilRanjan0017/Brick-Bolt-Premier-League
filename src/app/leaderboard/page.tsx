@@ -4,12 +4,12 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { getLeaderboardPageData } from '@/services/api'; 
+import { getLeaderboardPageData } from '@/services/api';
 import type { LeaderboardEntry, OMTrendData, LeaderboardPageData, HistoricalWinner } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart as RechartsBarChart, LineChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { Users, TrendingUp, BarChart3, Crown, UserCheck, UserCog, AlertCircle, History, Award, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { Users, TrendingUp, BarChart3, Crown, UserCheck, UserCog, AlertCircle, History, Award, ArrowUp, ArrowDown, Minus, ListChecks } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CityBadge from '@/components/shared/CityBadge';
@@ -28,7 +28,7 @@ const PodiumScenePlaceholder = () => (
 );
 
 const getBarColor = (index: number) => {
-    const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))']; 
+    const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))'];
     return colors[index % colors.length];
 };
 
@@ -55,7 +55,7 @@ const PodiumChart: React.FC<PodiumChartProps> = ({ data, title, icon: Icon }) =>
                         <YAxis
                             dataKey="name"
                             type="category"
-                            width={85} 
+                            width={85}
                             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, textAnchor: 'end' }}
                             axisLine={false}
                             tickLine={false}
@@ -70,7 +70,7 @@ const PodiumChart: React.FC<PodiumChartProps> = ({ data, title, icon: Icon }) =>
                            }}
                            itemStyle={{ color: 'hsl(var(--foreground))' }}
                            labelStyle={{ fontWeight: 'bold', color: 'hsl(var(--primary))' }}
-                           formatter={(value: number) => [`${value}%`, `RAG Score`]} 
+                           formatter={(value: number) => [`${value}%`, `RAG Score`]}
                         />
                         <Bar dataKey="score" name="RAG Score" barSize={20} radius={[0, 4, 4, 0]}>
                              {data.map((entry, index) => (
@@ -130,13 +130,14 @@ const OMTrendChart: React.FC<OMTrendChartProps> = ({ data }) => (
 
 interface HistoricalWinnersListProps {
     winners: HistoricalWinner[];
+    titleSuffix?: string;
 }
 
-const HistoricalWinnersList: React.FC<HistoricalWinnersListProps> = ({ winners }) => (
+const HistoricalWinnersList: React.FC<HistoricalWinnersListProps> = ({ winners, titleSuffix }) => (
      <Card className="shadow-md border rounded-lg overflow-hidden">
          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-                <History className="text-secondary h-5 w-5"/> Past Weekly Winners
+                <History className="text-secondary h-5 w-5"/> Past Weekly Winners {titleSuffix ? `(${titleSuffix})` : ''}
             </CardTitle>
             <CardDescription>Top performers from the last 8 weeks</CardDescription>
          </CardHeader>
@@ -144,7 +145,7 @@ const HistoricalWinnersList: React.FC<HistoricalWinnersListProps> = ({ winners }
              {winners && winners.length > 0 ? (
                 <ul className="space-y-3 divide-y divide-border">
                     {winners.map((winner) => (
-                        <li key={winner.week} className="flex items-center justify-between pt-3 first:pt-0">
+                        <li key={`${winner.week}-${winner.name}-${titleSuffix}`} className="flex items-center justify-between pt-3 first:pt-0">
                            <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9 border">
                                     <AvatarImage src={winner.profilePic} alt={winner.name} data-ai-hint="person winner"/>
@@ -170,17 +171,19 @@ const HistoricalWinnersList: React.FC<HistoricalWinnersListProps> = ({ winners }
 const LoadingSkeleton = () => (
     <div className="space-y-8">
          <Skeleton className="h-8 w-64 mb-6" />
-         <Skeleton className="h-6 w-40 mb-4" />
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           {[...Array(3)].map((_, i) => (
-             <Card key={i}> <CardHeader><Skeleton className="h-6 w-32" /> <Skeleton className="h-4 w-24 mt-1" /></CardHeader> <CardContent className="h-60"><Skeleton className="h-full w-full" /></CardContent> </Card>
-           ))}
+         <div className="space-y-8 border-b pb-12 last:border-b-0 last:pb-0">
+            <Skeleton className="h-6 w-40 mb-4" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, j) => (
+                    <Card key={`skel-podium-main-${j}`}> <CardHeader><Skeleton className="h-6 w-32" /> <Skeleton className="h-4 w-24 mt-1" /></CardHeader> <CardContent className="h-60"><Skeleton className="h-full w-full" /></CardContent> </Card>
+                ))}
+            </div>
+            <Card className="h-[350px] flex items-center justify-center"> <Skeleton className="h-3/4 w-3/4" /> </Card>
+            <Card> <CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-56 mt-1" /></CardHeader> <CardContent className="pt-0 space-y-3">{[...Array(3)].map((_, k) => ( <div key={`skel-hist-main-${k}`} className="flex items-center justify-between pt-3"><div className="flex items-center gap-3"><Skeleton className="h-9 w-9 rounded-full"/><div><Skeleton className="h-4 w-24 mb-1"/><Skeleton className="h-3 w-16 rounded-full"/></div></div><Skeleton className="h-4 w-12"/></div> ))}</CardContent> </Card>
          </div>
-        <Card className="h-[350px] flex items-center justify-center"> <Skeleton className="h-3/4 w-3/4" /> </Card>
-         <Card> <CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-56 mt-1" /></CardHeader> <CardContent className="pt-0 space-y-3">{[...Array(5)].map((_, i) => ( <div key={i} className="flex items-center justify-between pt-3"><div className="flex items-center gap-3"><Skeleton className="h-9 w-9 rounded-full"/><div><Skeleton className="h-4 w-24 mb-1"/><Skeleton className="h-3 w-16 rounded-full"/></div></div><Skeleton className="h-4 w-12"/></div> ))}</CardContent> </Card>
         <Skeleton className="h-6 w-48 mb-4 mt-8" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => ( 
+            {[...Array(3)].map((_, i) => (
                  <Card key={`om-skel-${i}`}> <CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-32 mt-1" /></CardHeader> <CardContent className="h-64"><Skeleton className="h-full w-full" /></CardContent> </Card>
              ))}
         </div>
@@ -236,51 +239,55 @@ const LeaderboardPage: React.FC = () => {
             </h1>
 
              {/* Single Top Performers, Podium, and Historical Winners Section */}
-            <div className="space-y-8">
+            <div className="space-y-8 border-b pb-12 last:border-b-0 last:pb-0">
                 <section>
-                     <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
+                        <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
                         <BarChart3 className="text-secondary h-6 w-6"/> Top Performers by Role
-                     </h2>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <PodiumChart data={topPerformers.om} title="Operations Managers" icon={UserCog} />
-                         <PodiumChart data={topPerformers.tl} title="Team Leads" icon={Users} />
-                         <PodiumChart data={topPerformers.spm} title="Senior Project Managers" icon={UserCheck} />
-                     </div>
-                 </section>
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <PodiumChart data={topPerformers.om} title="Operations Managers" icon={UserCog} />
+                            <PodiumChart data={topPerformers.tl} title="Team Leads" icon={Users} />
+                            <PodiumChart data={topPerformers.spm} title="Senior Project Managers" icon={UserCheck} />
+                        </div>
+                    </section>
 
-                 <section>
-                     <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-                       <Award className="text-secondary h-6 w-6" /> Podium Visualization
+                    <section>
+                        <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
+                        <Award className="text-secondary h-6 w-6" /> Podium Visualization
                     </h2>
                     <PodiumScenePlaceholder />
                 </section>
 
                 {historicalWinners && historicalWinners.length > 0 && (
-                     <section>
-                        <HistoricalWinnersList winners={historicalWinners}/>
+                        <section>
+                        <HistoricalWinnersList
+                            winners={historicalWinners}
+                            titleSuffix="Overall"
+                        />
                     </section>
                 )}
             </div>
-            
-             <section>
-                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-                    <TrendingUp className="text-secondary h-6 w-6"/> OM 8-Week RAG Score Trends
-                 </h2>
-                 {omTrends && omTrends.length > 0 ? (
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {omTrends.map(omData => (
-                            <OMTrendChart key={omData.omId} data={omData} />
-                        ))}
-                     </div>
-                 ) : (
-                     <Card><CardContent><p className="text-muted-foreground text-center py-6">No OM trend data.</p></CardContent></Card>
-                 )}
+
+
+            <section>
+                <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
+                <TrendingUp className="text-secondary h-6 w-6"/> OM 8-Week RAG Score Trends
+                </h2>
+                {omTrends && omTrends.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {omTrends.map(omData => (
+                        <OMTrendChart key={omData.omId} data={omData} />
+                    ))}
+                    </div>
+                ) : (
+                    <Card><CardContent><p className="text-muted-foreground text-center py-6">No OM trend data.</p></CardContent></Card>
+                )}
             </section>
 
             <section>
-                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-                    <Users className="text-secondary h-6 w-6"/> Full Leaderboard
-                 </h2>
+                <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
+                <Users className="text-secondary h-6 w-6"/> Full Leaderboard
+                </h2>
                 <Card className="shadow-md border rounded-lg overflow-hidden">
                     <CardContent className="p-0">
                         <div className="overflow-x-auto">
