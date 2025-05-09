@@ -1,6 +1,6 @@
 // src/services/api.ts
 import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, OMTrendData, Role, LeaderboardPageData, CityViewsPageData, DashboardStatsData, DashboardFilters } from '@/types';
-import { mockLeaderboard, mockHistoricalWinners, mockCityDetails, mockRewardDetails, mockOMTrends, mockDashboardStats } from './mockData';
+import { mockLeaderboard, mockHistoricalWinners, mockCityDetails, mockRewardDetails, mockOMTrends, mockDashboardStats, mockHistoricalWinnersOM, mockHistoricalWinnersTL, mockHistoricalWinnersSPM } from './mockData';
 
 /**
  * Simulates network delay.
@@ -33,12 +33,9 @@ export const getLeaderboardByRole = async (role: Role, limit?: number): Promise<
 
     const filteredData = mockLeaderboard.filter(entry => entry.role === role);
 
-    const rankedData = filteredData
-        .sort((a, b) => b.score - a.score) 
-        .map((entry, index) => ({
-            ...entry,
-            rank: index + 1, 
-        }));
+    // Data is already sorted by score in mockLeaderboard, ranks are assigned there.
+    // If it wasn't, we'd sort and rank here.
+    const rankedData = filteredData; 
 
      console.log(`API: Leaderboard data for ${role} fetched successfully.`);
     return limit ? rankedData.slice(0, limit) : rankedData;
@@ -59,13 +56,17 @@ export const getOMTrendData = async (): Promise<OMTrendData[]> => {
 
 /**
  * Fetches historical weekly winners data.
+ * @param role - Optional role to fetch winners for. If not provided, returns overall/default winners.
  * @returns A promise resolving to an array of HistoricalWinner.
  */
-export const getHistoricalWinners = async (): Promise<HistoricalWinner[]> => {
-  console.log("API: Fetching historical winners...");
+export const getHistoricalWinners = async (role?: Role): Promise<HistoricalWinner[]> => {
+  console.log(`API: Fetching historical winners ${role ? `for ${role}` : 'overall'}...`);
   await delay(400);
    console.log("API: Historical winners fetched successfully.");
-  return mockHistoricalWinners;
+   if (role === 'OM') return mockHistoricalWinnersOM;
+   if (role === 'TL') return mockHistoricalWinnersTL;
+   if (role === 'SPM') return mockHistoricalWinnersSPM;
+  return mockHistoricalWinners; // Default (could be overall or a specific default like SPM)
 };
 
 /**
@@ -101,13 +102,15 @@ export const getLeaderboardPageData = async (): Promise<LeaderboardPageData> => 
     await delay(1200); 
 
     try {
-        const [topOMs, topTLs, topSPMs, omTrends, fullLeaderboard, historicalWinners] = await Promise.all([
+        const [topOMs, topTLs, topSPMs, omTrends, fullLeaderboard, histWinnersOM, histWinnersTL, histWinnersSPM] = await Promise.all([
             getLeaderboardByRole('OM', 3),
             getLeaderboardByRole('TL', 3),
             getLeaderboardByRole('SPM', 3),
             getOMTrendData(),
             getFullLeaderboard(),
-            getHistoricalWinners(), 
+            getHistoricalWinners('OM'),
+            getHistoricalWinners('TL'),
+            getHistoricalWinners('SPM'),
         ]);
 
         console.log("API: Consolidated Leaderboard Page data fetched successfully.");
@@ -119,7 +122,10 @@ export const getLeaderboardPageData = async (): Promise<LeaderboardPageData> => 
             },
             omTrends: omTrends,
             fullLeaderboard: fullLeaderboard,
-            historicalWinners: historicalWinners, 
+            historicalWinners: mockHistoricalWinners, // Keep a general one if needed, or remove
+            historicalWinnersOM: histWinnersOM,
+            historicalWinnersTL: histWinnersTL,
+            historicalWinnersSPM: histWinnersSPM,
         };
     } catch (error) {
         console.error("API Error: Failed to fetch consolidated leaderboard data.", error);
@@ -146,15 +152,15 @@ export const getCityViewsPageData = async (): Promise<CityViewsPageData> => {
 
 /**
  * Fetches statistics for the main dashboard.
- * @param filters - Optional filters for city, role, time period.
+ * Now returns leaderboard data and recent activities.
+ * @param filters - Optional filters for city.
  * @returns A promise resolving to DashboardStatsData.
  */
 export const getDashboardStats = async (filters?: DashboardFilters): Promise<DashboardStatsData> => {
     console.log(`API: Fetching dashboard stats with filters: ${JSON.stringify(filters)}...`);
     await delay(700);
-    // In a real API, you would use these filters to query the backend.
-    // For mock data, we'll return the same stats for now, but you can add logic
-    // in mockData.ts to vary results based on filters if needed.
+    // The mockDashboardStats function in mockData.ts will handle filter logic if any.
+    const data = mockDashboardStats(filters);
     console.log("API: Dashboard stats fetched successfully.");
-    return mockDashboardStats(filters); // Pass filters to mock data generator
+    return data;
 };

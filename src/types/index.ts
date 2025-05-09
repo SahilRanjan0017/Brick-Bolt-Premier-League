@@ -116,6 +116,10 @@ export interface LeaderboardPageData {
     omTrends: OMTrendData[];
     fullLeaderboard: LeaderboardEntry[];
     historicalWinners: HistoricalWinner[]; 
+    // Added to support duplicated historical winners per role
+    historicalWinnersOM: HistoricalWinner[];
+    historicalWinnersTL: HistoricalWinner[];
+    historicalWinnersSPM: HistoricalWinner[];
 }
 
 export interface CityViewsPageData {
@@ -123,24 +127,38 @@ export interface CityViewsPageData {
 }
 
 // --- New Dashboard Types ---
-export interface StatCardData {
+export interface StatCardData { // This might be deprecated or reused differently
     value: string | number;
-    trend?: string; // e.g., "+12 from last month"
+    trend?: string; 
     trendDirection?: 'up' | 'down' | 'neutral';
-    percentage?: string; // e.g., "65% of total"
+    percentage?: string; 
 }
 
+export interface RecentActivityItem {
+    id: string;
+    type: 'milestone' | 'status_change' | 'assignment' | 'completion' | 'general';
+    description: string; // HTML for bolding etc.
+    time: string; // e.g., "2 hours ago"
+    details?: {
+        text: string; // e.g. "+6 Runs" or "Runs"
+        type: 'positive' | 'negative' | 'neutral';
+    };
+    icon?: React.ElementType; // Optional: if specific icons per activity are needed beyond type
+}
+
+
 export interface DashboardStatsData {
-    activeProjects: StatCardData;
-    greenProjects: StatCardData;
-    amberProjects: StatCardData;
-    redProjects: StatCardData;
-    // Potentially other overall stats for the selected filters
+    // activeProjects: StatCardData; // Old stat cards, replaced by new layout
+    // greenProjects: StatCardData;
+    // amberProjects: StatCardData;
+    // redProjects: StatCardData;
+    leaderboard: LeaderboardEntry[]; // For the BPL Leaderboard table
+    recentActivities: RecentActivityItem[]; // For the Recent Activity card
 }
 
 // For API call parameters to getDashboardStats
 export interface DashboardFilters {
     city?: string;
-    role?: string;
-    time?: string; // e.g. 'this_week', 'last_month'
+    // role?: string; // Role filtering will be client-side on the dashboard for the table
+    // time?: string; 
 }

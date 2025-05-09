@@ -1,10 +1,12 @@
 // src/services/mockData.ts
-import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, Project, OMTrendData, RAGCounts, Role, DashboardStatsData, DashboardFilters, StatCardData } from '@/types';
+import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, Project, OMTrendData, RAGCounts, Role, DashboardStatsData, DashboardFilters, RecentActivityItem } from '@/types';
 
 // --- Helper Functions ---
 
 const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts => {
     let green = 0, amber = 0, red = 0;
+    if (projectCount === 0) return { green: 0, amber: 0, red: 0 };
+    
     const baseGreen = Math.floor(projectCount * (score / 100));
     const remaining = projectCount - baseGreen;
 
@@ -58,11 +60,17 @@ const assignManager = (role: Role, omList: string[], tlList: string[]): string |
 // --- Mock Leaderboard Data ---
 const numEntries = 30;
 const cities = ['BLR_A', 'BLR_B', 'CHN', 'NCR', 'HYD'];
+const firstNames = ["Aarav", "Vivaan", "Aditya", "Vihaan", "Arjun", "Sai", "Reyansh", "Krishna", "Ishaan", "Rohan", "Priya", "Ananya", "Diya", "Saanvi", "Myra"];
+const lastNames = ["Sharma", "Verma", "Gupta", "Patel", "Kumar", "Singh", "Das", "Reddy", "Nair", "Menon", "Joshi", "Shah", "Mehta"];
+
+
 const rawLeaderboard: Omit<LeaderboardEntry, 'rank' | 'ragStatus' | 'manages' | 'reportsTo' | 'projectCount' | 'rankChange'>[] = Array.from({ length: numEntries }, (_, i) => {
-    const score = Math.floor(50 + Math.random() * 49); 
+    const score = Math.floor(70 + Math.random() * 29); // Higher scores 70-99
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
     return {
         id: `emp${String(i + 1).padStart(3, '0')}`,
-        name: `Employee ${String(i + 1).padStart(3, '0')}`,
+        name: `${firstName} ${lastName}`,
         city: cities[i % cities.length],
         score: score,
         role: getRandomRole(i), 
@@ -81,20 +89,21 @@ export const mockLeaderboard: LeaderboardEntry[] = rawLeaderboard.map((entry) =>
     let reportsTo: string | undefined = undefined;
     let manages: LeaderboardEntry['manages'] | undefined = undefined;
     let projectCount: number | undefined = undefined;
-    const rankChange = Math.floor(Math.random() * 5) - 2; // -2 to +2
+    const rankChange = Math.floor(Math.random() * 7) - 3; // -3 to +3
 
     if (entry.role === 'OM') {
         manages = {
             tls: tls.filter(tl => tl.city === entry.city && Math.random() > 0.3).map(tl => tl.id), 
             spms: spms.filter(spm => spm.city === entry.city && Math.random() > 0.4).map(spm => spm.id) 
         };
+        projectCount = (manages.tls?.length ?? 0) * 5 + (manages.spms?.length ?? 0) * 2; // OM project count derived
     } else if (entry.role === 'TL') {
         reportsTo = assignManager(entry.role, omIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city), []); 
-        projectCount = Math.floor(8 + Math.random() * 8); 
+        projectCount = Math.floor(5 + Math.random() * 6); // TLs manage 5-10 projects
     } else if (entry.role === 'SPM') {
         const cityTLs = tlIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city);
         reportsTo = assignManager(entry.role, [], cityTLs); 
-        projectCount = Math.floor(3 + Math.random() * 5); 
+        projectCount = Math.floor(2 + Math.random() * 4); // SPMs manage 2-5 projects
     }
 
     return {
@@ -111,17 +120,26 @@ export const mockLeaderboard: LeaderboardEntry[] = rawLeaderboard.map((entry) =>
 
 
 // --- Mock Historical Winners ---
-export const mockHistoricalWinners: HistoricalWinner[] = Array.from({ length: 8 }, (_, i) => {
-    const week = 30 - i;
-    const winnerIndex = Math.floor(Math.random() * mockLeaderboard.length);
-    const winner = mockLeaderboard[winnerIndex];
-    return {
-        week: week,
-        name: winner.name,
-        city: winner.city,
-        profilePic: winner.profilePic,
-    }
-});
+const generateHistoricalWinnersForRole = (role: Role): HistoricalWinner[] => {
+    const roleSpecificLeaderboard = mockLeaderboard.filter(p => p.role === role);
+    if (roleSpecificLeaderboard.length === 0) return [];
+    return Array.from({ length: 8 }, (_, i) => {
+        const week = 30 - i; // Example week numbers
+        const winnerIndex = Math.floor(Math.random() * roleSpecificLeaderboard.length);
+        const winner = roleSpecificLeaderboard[winnerIndex];
+        return {
+            week: week,
+            name: winner.name,
+            city: winner.city,
+            profilePic: winner.profilePic,
+        };
+    });
+};
+
+export const mockHistoricalWinners: HistoricalWinner[] = generateHistoricalWinnersForRole('SPM'); // Default for overall or specific role
+export const mockHistoricalWinnersOM: HistoricalWinner[] = generateHistoricalWinnersForRole('OM');
+export const mockHistoricalWinnersTL: HistoricalWinner[] = generateHistoricalWinnersForRole('TL');
+export const mockHistoricalWinnersSPM: HistoricalWinner[] = generateHistoricalWinnersForRole('SPM');
 
 
 // --- Mock City Details ---
@@ -168,7 +186,7 @@ const calculateRoleProjectCount = (personnel: LeaderboardEntry[], role: Role): n
 
 export const mockCityDetails: Record<string, CityData> = cities.reduce((acc, cityId) => {
     const cityPersonnel = mockLeaderboard.filter(p => p.city === cityId);
-    const cityProjects = generateProjectsForCity(cityId, cityPersonnel); 
+    // const cityProjects = generateProjectsForCity(cityId, cityPersonnel); // Projects not directly used in CityViews page current structure
 
     const tlRag = calculateRoleRagSummary(cityPersonnel, 'TL');
     const spmRag = calculateRoleRagSummary(cityPersonnel, 'SPM');
@@ -227,16 +245,16 @@ const getTopPerformerId = (role: Role): string | null => {
 
 export const mockRewardDetails: RewardDetails = {
     awards: {
-        employeeOfMonth: {
-            title: "Manager of the Month (OM)",
+        employeeOfMonth: { // OM
+            title: "Manager of the Month",
             awardeeId: getTopPerformerId('OM'),
         },
-        cityChampion: {
-            title: "Lead Champion (TL)",
+        cityChampion: { // TL
+            title: "Lead Champion",
              awardeeId: getTopPerformerId('TL'),
         },
-        innovationAward: {
-            title: "Execution Excellence (SPM)",
+        innovationAward: { // SPM
+            title: "Execution Excellence",
              awardeeId: getTopPerformerId('SPM'),
         },
     },
@@ -258,36 +276,58 @@ export const mockRewardDetails: RewardDetails = {
     }
 };
 
-// --- Mock Dashboard Stats Data ---
-export const mockDashboardStats = (filters?: DashboardFilters): DashboardStatsData => {
-  // Simple mock data generation, can be made more complex based on filters
-  const active = 600 + Math.floor(Math.random() * 51) - 25; // e.g. 625
-  const green = Math.floor(active * (0.35 + Math.random() * 0.1)); // e.g. 248
-  const amber = Math.floor(active * (0.20 + Math.random() * 0.1)); // e.g. 150
-  const red = active - green - amber; // e.g. 227
+// --- Mock Recent Activity Data ---
+const mockRecentActivities: RecentActivityItem[] = [
+    {
+        id: 'act1',
+        type: 'milestone',
+        description: '&lt;strong&gt;Manikandan&lt;/strong&gt; achieved Milestone 3 on CRN00123.',
+        time: '2 hours ago',
+        details: { text: '+6 Runs', type: 'positive' }
+    },
+    {
+        id: 'act2',
+        type: 'status_change',
+        description: 'CRN00789 status changed to &lt;strong&gt;Red&lt;/strong&gt;.',
+        time: '5 hours ago',
+        details: { text: 'Runs', type: 'negative' }
+    },
+    {
+        id: 'act3',
+        type: 'assignment',
+        description: '&lt;strong&gt;Sameer&lt;/strong&gt; assigned to new project CRN00567.',
+        time: '1 day ago',
+    },
+    {
+        id: 'act4',
+        type: 'completion',
+        description: '&lt;strong&gt;Sai Ram D&lt;/strong&gt; completed project CRN00098 ahead of schedule.',
+        time: '2 days ago',
+        details: { text: '+5 Runs', type: 'positive' }
+    },
+     {
+        id: 'act5',
+        type: 'general',
+        description: 'New training module "Advanced Concrete Techniques" uploaded.',
+        time: '3 days ago',
+    },
+];
 
-  const trendActive = Math.floor(Math.random() * 21) - 10;
-  const trendRed = Math.floor(Math.random() * 9) - 4;
+
+// --- Mock Dashboard Stats Data (Updated for new Dashboard structure) ---
+export const mockDashboardStats = (filters?: DashboardFilters): DashboardStatsData => {
+  // Filters can be used here to modify the returned mockLeaderboard if needed
+  // For now, we return the full mockLeaderboard and mockRecentActivities
+  let filteredLeaderboard = mockLeaderboard;
+  if (filters?.city && filters.city !== "pan_india") {
+    filteredLeaderboard = mockLeaderboard.filter(p => p.city === filters.city)
+                             .sort((a,b) => b.score - a.score)
+                             .map((e, i) => ({...e, rank: i + 1}));
+  }
 
 
   return {
-    activeProjects: {
-      value: active,
-      trend: `${trendActive >= 0 ? '+' : ''}${trendActive} from last month`,
-      trendDirection: trendActive >=0 ? (trendActive === 0 ? 'neutral' : 'up') : 'down',
-    },
-    greenProjects: {
-      value: green,
-      percentage: `${Math.round((green/active)*100)}% of total`,
-    },
-    amberProjects: {
-      value: amber,
-      percentage: `${Math.round((amber/active)*100)}% of total`,
-    },
-    redProjects: {
-      value: red,
-      trend: `${trendRed >= 0 ? '+' : ''}${trendRed} from last month`,
-      trendDirection: trendRed >=0 ? (trendRed === 0 ? 'neutral' : 'up') : 'down',
-    },
+    leaderboard: filteredLeaderboard,
+    recentActivities: mockRecentActivities,
   };
 };
