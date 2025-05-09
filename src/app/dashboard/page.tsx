@@ -8,19 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, ListChecks, History, AlertTriangle, ArrowUp, ArrowDown, CheckCircle, User, Clock, Edit3, Zap } from 'lucide-react';
+import { Trophy, History, AlertTriangle, ArrowUp, ArrowDown, CheckCircle, User, Clock, Edit3, Zap, LayoutDashboardIcon } from 'lucide-react';
 import { getDashboardStats } from '@/services/api';
 import type { DashboardStatsData, LeaderboardEntry, RecentActivityItem, Role } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import TabSelector from '@/components/shared/TabSelector'; // Assuming TabSelector is suitable
+import TabSelector from '@/components/shared/TabSelector';
 
 const RankCircle: React.FC<{ rank: number }> = ({ rank }) => {
   let bgColor = 'bg-gray-400';
   if (rank === 1) bgColor = 'bg-yellow-400';
   else if (rank === 2) bgColor = 'bg-slate-400';
-  else if (rank === 3) bgColor = 'bg-orange-400';
   else if (rank <= 5) bgColor = 'bg-blue-500';
 
   return (
@@ -73,10 +72,12 @@ const ActivityIcon: React.FC<{ type: RecentActivityItem['type'] }> = ({ type }) 
 
 const LoadingSkeleton: React.FC = () => (
     <div className="space-y-6">
-        <div className="flex justify-end items-center">
-            <Skeleton className="h-10 w-[180px]" />
+        <div className="flex justify-between items-center">
+             <Skeleton className="h-8 w-48" /> {/* Title Skeleton */}
+            <Skeleton className="h-10 w-[180px]" /> {/* City Filter Skeleton */}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Removed Performance Scoreboard Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             {/* Leaderboard Skeleton */}
             <Card className="lg:col-span-2 shadow-lg">
                 <CardHeader>
@@ -121,7 +122,11 @@ const DashboardPage: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await getDashboardStats({ city: cityFilter }); // Pass city filter
+        // Pass city, role, and week filters to getDashboardStats
+        // For the main dashboard, role and week might not apply to the leaderboard/activity
+        // but the API is designed to accept them for the stat cards (now on leaderboard page).
+        // Here we primarily use cityFilter for the leaderboard.
+        const data = await getDashboardStats({ city: cityFilter });
         setDashboardData(data);
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
@@ -132,10 +137,11 @@ const DashboardPage: React.FC = () => {
     };
 
     fetchData();
-  }, [cityFilter]);
+  }, [cityFilter]); // Re-fetch if cityFilter changes
 
   const filteredLeaderboard = useMemo(() => {
     if (!dashboardData?.leaderboard) return [];
+    // Leaderboard data from API is already filtered by city if cityFilter is active
     return dashboardData.leaderboard.filter(entry => entry.role === selectedRole);
   }, [dashboardData, selectedRole]);
 
@@ -170,13 +176,15 @@ const DashboardPage: React.FC = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Global Filter */}
-      <div className="flex justify-between items-center mb-2">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <div className="flex items-center gap-2">
-            <label htmlFor="city-filter" className="text-sm font-medium text-muted-foreground">Filter by City:</label>
+      {/* Global Filter and Title */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-4">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <LayoutDashboardIcon className="h-7 w-7 text-primary"/> Dashboard Overview
+        </h1>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+            <label htmlFor="city-filter" className="text-sm font-medium text-muted-foreground whitespace-nowrap">Filter by City:</label>
             <Select value={cityFilter} onValueChange={setCityFilter}>
-            <SelectTrigger id="city-filter" className="w-[180px] bg-card">
+            <SelectTrigger id="city-filter" className="w-full sm:w-[180px] bg-card">
                 <SelectValue placeholder="Select City" />
             </SelectTrigger>
             <SelectContent>
@@ -191,18 +199,23 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Performance Scoreboard section removed from here */}
+
       {/* Main Content Area - Two Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: BPL Leaderboard */}
         <Card className="lg:col-span-2 shadow-lg rounded-xl">
           <CardHeader className="border-b pb-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <CardTitle className="text-xl font-semibold flex items-center gap-2">
                 <Trophy className="h-6 w-6 text-yellow-500" />
                 BPL Leaderboard
               </CardTitle>
               <TabSelector tabs={roleTabs} selectedTab={selectedRole} onSelectTab={(roleId) => setSelectedRole(roleId as Role)} />
             </div>
+            <CardDescription className="text-sm text-muted-foreground mt-1">
+                Displaying {selectedRole} rankings for {cityFilter === 'pan_india' ? 'Pan India' : cityFilter}.
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -219,7 +232,7 @@ const DashboardPage: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLeaderboard.slice(0, 7).map((entry) => ( // Show top 7 for example
+                  {filteredLeaderboard.length > 0 ? filteredLeaderboard.slice(0, 7).map((entry) => (
                     <TableRow key={entry.id}>
                       <TableCell className="text-center"><RankCircle rank={entry.rank} /></TableCell>
                       <TableCell>
@@ -244,7 +257,9 @@ const DashboardPage: React.FC = () => {
                       <TableCell className="text-center font-semibold">{entry.score}</TableCell>
                       <TableCell className="text-center"><TrendIndicator change={entry.rankChange} /></TableCell>
                     </TableRow>
-                  ))}
+                  )) : (
+                     <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">No {selectedRole} data available for {cityFilter === 'pan_india' ? 'Pan India' : cityFilter}.</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -260,7 +275,7 @@ const DashboardPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6 space-y-5">
-            {dashboardData.recentActivities.slice(0, 4).map((activity) => (
+            {dashboardData.recentActivities.length > 0 ? dashboardData.recentActivities.slice(0, 5).map((activity) => (
               <div key={activity.id} className="flex items-start space-x-3">
                 <div className={cn("mt-1 p-1.5 rounded-full flex items-center justify-center",
                     activity.type === 'milestone' ? 'bg-yellow-100 dark:bg-yellow-900/50' :
@@ -285,7 +300,9 @@ const DashboardPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-            ))}
+            )) : (
+                <p className="text-center text-muted-foreground py-6">No recent activity.</p>
+            )}
           </CardContent>
         </Card>
       </div>

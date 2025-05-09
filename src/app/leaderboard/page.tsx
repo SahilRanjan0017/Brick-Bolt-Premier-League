@@ -1,21 +1,22 @@
 // src/app/leaderboard/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { getLeaderboardPageData } from '@/services/api';
-import type { LeaderboardEntry, OMTrendData, LeaderboardPageData, HistoricalWinner } from '@/types';
+import { getLeaderboardPageData, getDashboardStats } from '@/services/api';
+import type { LeaderboardEntry, OMTrendData, LeaderboardPageData, HistoricalWinner, DashboardStatsData, Role as RoleType, StatCardData } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart as RechartsBarChart, LineChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { Users, TrendingUp, BarChart3, Crown, UserCheck, UserCog, AlertCircle, History, Award, ArrowUp, ArrowDown, Minus, ListChecks } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, TrendingUp, BarChart3, Crown, UserCheck, UserCog, AlertCircle, History, Award, ArrowUp, ArrowDown, Minus, ListChecks, PieChart as PieChartIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CityBadge from '@/components/shared/CityBadge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RAGIndicator from '@/components/shared/RAGIndicator';
-
+import StatCard from '@/components/dashboard/StatCard'; // Import the new StatCard
 
 const PodiumScenePlaceholder = () => (
      <Card className="shadow-lg border rounded-lg bg-gradient-to-br from-secondary/10 via-background to-background h-[350px] flex items-center justify-center">
@@ -145,7 +146,7 @@ const HistoricalWinnersList: React.FC<HistoricalWinnersListProps> = ({ winners, 
              {winners && winners.length > 0 ? (
                 <ul className="space-y-3 divide-y divide-border">
                     {winners.map((winner) => (
-                        <li key={`${winner.week}-${winner.name}-${titleSuffix}`} className="flex items-center justify-between pt-3 first:pt-0">
+                        <li key={`${winner.week}-${winner.name}-${winner.city}-${titleSuffix}`} className="flex items-center justify-between pt-3 first:pt-0">
                            <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9 border">
                                     <AvatarImage src={winner.profilePic} alt={winner.name} data-ai-hint="person winner"/>
@@ -170,18 +171,47 @@ const HistoricalWinnersList: React.FC<HistoricalWinnersListProps> = ({ winners, 
 
 const LoadingSkeleton = () => (
     <div className="space-y-8">
-         <Skeleton className="h-8 w-64 mb-6" />
-         <div className="space-y-8 border-b pb-12 last:border-b-0 last:pb-0">
-            <Skeleton className="h-6 w-40 mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[...Array(3)].map((_, j) => (
-                    <Card key={`skel-podium-main-${j}`}> <CardHeader><Skeleton className="h-6 w-32" /> <Skeleton className="h-4 w-24 mt-1" /></CardHeader> <CardContent className="h-60"><Skeleton className="h-full w-full" /></CardContent> </Card>
+         {/* Performance Scoreboard Skeleton */}
+        <Skeleton className="h-8 w-72 mb-1" />
+        <Skeleton className="h-4 w-96 mb-6" />
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <Skeleton className="h-7 w-48" />
+                    <div className="flex gap-2">
+                        <Skeleton className="h-9 w-32" />
+                        <Skeleton className="h-9 w-32" />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                             <Skeleton className="h-5 w-24" /> <Skeleton className="h-8 w-8 rounded-md" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-8 w-16 mb-1" /> <Skeleton className="h-3 w-32" />
+                        </CardContent>
+                    </Card>
                 ))}
+            </CardContent>
+        </Card>
+
+         <Skeleton className="h-8 w-64 mb-6 mt-10" />
+         {[...Array(3)].map((_,i) => (
+            <div key={`skel-dup-${i}`} className="space-y-8 border-b pb-12 last:border-b-0 last:pb-0">
+                <Skeleton className="h-6 w-40 mb-4" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[...Array(3)].map((_, j) => (
+                        <Card key={`skel-podium-main-${i}-${j}`}> <CardHeader><Skeleton className="h-6 w-32" /> <Skeleton className="h-4 w-24 mt-1" /></CardHeader> <CardContent className="h-60"><Skeleton className="h-full w-full" /></CardContent> </Card>
+                    ))}
+                </div>
+                <Card className="h-[350px] flex items-center justify-center"> <Skeleton className="h-3/4 w-3/4" /> </Card>
+                <Card> <CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-56 mt-1" /></CardHeader> <CardContent className="pt-0 space-y-3">{[...Array(3)].map((_, k) => ( <div key={`skel-hist-main-${i}-${k}`} className="flex items-center justify-between pt-3"><div className="flex items-center gap-3"><Skeleton className="h-9 w-9 rounded-full"/><div><Skeleton className="h-4 w-24 mb-1"/><Skeleton className="h-3 w-16 rounded-full"/></div></div><Skeleton className="h-4 w-12"/></div> ))}</CardContent> </Card>
             </div>
-            <Card className="h-[350px] flex items-center justify-center"> <Skeleton className="h-3/4 w-3/4" /> </Card>
-            <Card> <CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-56 mt-1" /></CardHeader> <CardContent className="pt-0 space-y-3">{[...Array(3)].map((_, k) => ( <div key={`skel-hist-main-${k}`} className="flex items-center justify-between pt-3"><div className="flex items-center gap-3"><Skeleton className="h-9 w-9 rounded-full"/><div><Skeleton className="h-4 w-24 mb-1"/><Skeleton className="h-3 w-16 rounded-full"/></div></div><Skeleton className="h-4 w-12"/></div> ))}</CardContent> </Card>
-         </div>
-        <Skeleton className="h-6 w-48 mb-4 mt-8" />
+         ))}
+        <Skeleton className="h-6 w-40 mb-4 mt-8" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(3)].map((_, i) => (
                  <Card key={`om-skel-${i}`}> <CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-32 mt-1" /></CardHeader> <CardContent className="h-64"><Skeleton className="h-full w-full" /></CardContent> </Card>
@@ -195,37 +225,78 @@ const LoadingSkeleton = () => (
 
 const LeaderboardPage: React.FC = () => {
     const [pageData, setPageData] = useState<LeaderboardPageData | null>(null);
+    const [dashboardDataLDB, setDashboardDataLDB] = useState<DashboardStatsData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [selectedScoreboardRole, setSelectedScoreboardRole] = useState<RoleType>("All Roles");
+    const [selectedScoreboardWeek, setSelectedScoreboardWeek] = useState<string>("This Week");
+
 
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                const data = await getLeaderboardPageData();
-                setPageData(data);
+                const [leaderboardPageResult, dashboardStatsResult] = await Promise.allSettled([
+                    getLeaderboardPageData(),
+                    getDashboardStats({ role: selectedScoreboardRole === 'All Roles' ? undefined : selectedScoreboardRole, week: selectedScoreboardWeek })
+                ]);
+
+                if (leaderboardPageResult.status === 'fulfilled') {
+                    setPageData(leaderboardPageResult.value);
+                } else {
+                    console.error("Failed to load leaderboard page data:", leaderboardPageResult.reason);
+                    setError(prev => prev ? `${prev} Leaderboard data failed.` : "Leaderboard data failed.");
+                }
+
+                if (dashboardStatsResult.status === 'fulfilled') {
+                    setDashboardDataLDB(dashboardStatsResult.value);
+                } else {
+                    console.error("Failed to load dashboard stats for leaderboard page:", dashboardStatsResult.reason);
+                     setError(prev => prev ? `${prev} Scoreboard data failed.` : "Scoreboard data failed.");
+                }
+
             } catch (err) {
-                console.error("Failed to load leaderboard page data:", err);
+                console.error("Failed to load page data:", err);
                 setError(err instanceof Error ? err.message : "An unknown error occurred");
             } finally {
                 setIsLoading(false);
             }
         };
         fetchData();
-    }, []);
+    }, [selectedScoreboardRole, selectedScoreboardWeek]);
+
+    const duplicatedHistoricalWinners = useMemo(() => {
+        if (!pageData) return [[], [], []];
+        return [
+            pageData.historicalWinnersOM || [],
+            pageData.historicalWinnersTL || [],
+            pageData.historicalWinnersSPM || [],
+        ];
+    }, [pageData]);
+
 
     if (isLoading) return <LoadingSkeleton />;
-    if (error) return ( <div className="container mx-auto px-4 py-8"> <Alert variant="destructive"> <AlertCircle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle> <AlertDescription>{error}</AlertDescription> </Alert> </div> );
-    if (!pageData) return <p className="text-center text-muted-foreground mt-6 py-8">No data available.</p>;
+    if (error && !pageData && !dashboardDataLDB) return ( <div className="container mx-auto px-4 py-8"> <Alert variant="destructive"> <AlertCircle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle> <AlertDescription>{error}</AlertDescription> </Alert> </div> );
+    // Allow rendering if some data is available even with partial error
+    // if (!pageData) return <p className="text-center text-muted-foreground mt-6 py-8">No main leaderboard data available.</p>;
 
-    const { topPerformers, omTrends, historicalWinners, fullLeaderboard } = pageData;
+    const { topPerformers, omTrends, fullLeaderboard, historicalWinners } = pageData || {};
 
     const RankChangeIcon = ({ change }: { change?: number }) => {
         if (change === undefined || change === null || change === 0) return <Minus className="h-3 w-3 text-muted-foreground" />;
         if (change > 0) return <ArrowUp className="h-3 w-3 text-green-500" />;
         return <ArrowDown className="h-3 w-3 text-red-500" />;
     };
+
+    const statCardsDisplayData = dashboardDataLDB ? [
+        dashboardDataLDB.activeProjects,
+        dashboardDataLDB.greenProjects,
+        dashboardDataLDB.amberProjects,
+        dashboardDataLDB.redProjects,
+    ] : [];
+
 
     return (
         <motion.div
@@ -234,39 +305,90 @@ const LeaderboardPage: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="space-y-12"
         >
+             {/* Moved Performance Scoreboard Section */}
+            <section className="space-y-4">
+                <h1 className="text-3xl font-bold text-foreground">Brick & Bolt Premier League Dashboard</h1>
+                <p className="text-muted-foreground">
+                    Track performance, celebrate achievements, and compete for the top spot in our construction championship.
+                </p>
+                <Card className="shadow-lg rounded-xl border">
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                                <PieChartIcon className="h-6 w-6 text-primary" /> Performance Scoreboard
+                            </CardTitle>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <Select value={selectedScoreboardRole} onValueChange={(value) => setSelectedScoreboardRole(value as RoleType)}>
+                                    <SelectTrigger className="w-full sm:w-[160px] bg-card">
+                                        <SelectValue placeholder="All Roles" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All Roles">All Roles</SelectItem>
+                                        <SelectItem value="OM">OM</SelectItem>
+                                        <SelectItem value="TL">TL</SelectItem>
+                                        <SelectItem value="SPM">SPM</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select value={selectedScoreboardWeek} onValueChange={setSelectedScoreboardWeek}>
+                                    <SelectTrigger className="w-full sm:w-[160px] bg-card">
+                                        <SelectValue placeholder="This Week" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="This Week">This Week</SelectItem>
+                                        <SelectItem value="Last Week">Last Week</SelectItem>
+                                        <SelectItem value="Last Month">Last Month</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                        {isLoading && !dashboardDataLDB && Array.from({length: 4}).map((_,idx) => <Skeleton key={`stat-skel-${idx}`} className="h-[120px] w-full" />)}
+                        {!isLoading && dashboardDataLDB && statCardsDisplayData.map((statData) => (
+                            statData ? <StatCard key={statData.title} data={statData} /> : null
+                        ))}
+                         {!isLoading && !dashboardDataLDB && <p className="col-span-full text-center text-muted-foreground py-4">Scoreboard data could not be loaded.</p>}
+                    </CardContent>
+                </Card>
+            </section>
+
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                 <ListChecks className="text-primary h-7 w-7" /> Leaderboard & Performance Insights
             </h1>
 
-             {/* Single Top Performers, Podium, and Historical Winners Section */}
-            <div className="space-y-8 border-b pb-12 last:border-b-0 last:pb-0">
-                <section>
+             {/* Duplicated Sections: Top Performers, Podium, Historical Winners */}
+            {[0, 1, 2].map((index) => (
+                <div key={`duplicate-section-${index}`} className="space-y-8 border-b pb-12 last:border-b-0 last:pb-0">
+                    <section>
                         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-                        <BarChart3 className="text-secondary h-6 w-6"/> Top Performers by Role
+                        <BarChart3 className="text-secondary h-6 w-6"/> Top Performers by Role (#{index + 1})
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <PodiumChart data={topPerformers.om} title="Operations Managers" icon={UserCog} />
-                            <PodiumChart data={topPerformers.tl} title="Team Leads" icon={Users} />
-                            <PodiumChart data={topPerformers.spm} title="Senior Project Managers" icon={UserCheck} />
-                        </div>
+                        {topPerformers ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <PodiumChart data={topPerformers.om} title="Operations Managers" icon={UserCog} />
+                                <PodiumChart data={topPerformers.tl} title="Team Leads" icon={Users} />
+                                <PodiumChart data={topPerformers.spm} title="Senior Project Managers" icon={UserCheck} />
+                            </div>
+                        ) : <p className="text-muted-foreground">Top performer data loading or unavailable.</p>}
                     </section>
 
                     <section>
                         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-                        <Award className="text-secondary h-6 w-6" /> Podium Visualization
+                        <Award className="text-secondary h-6 w-6" /> Podium Visualization (#{index + 1})
                     </h2>
                     <PodiumScenePlaceholder />
-                </section>
-
-                {historicalWinners && historicalWinners.length > 0 && (
-                        <section>
-                        <HistoricalWinnersList
-                            winners={historicalWinners}
-                            titleSuffix="Overall"
-                        />
                     </section>
-                )}
-            </div>
+
+                    {duplicatedHistoricalWinners[index] && duplicatedHistoricalWinners[index].length > 0 && (
+                        <section>
+                            <HistoricalWinnersList
+                                winners={duplicatedHistoricalWinners[index]}
+                                titleSuffix={index === 0 ? "OM" : index === 1 ? "TL" : "SPM"}
+                            />
+                        </section>
+                    )}
+                </div>
+            ))}
 
 
             <section>
@@ -286,60 +408,73 @@ const LeaderboardPage: React.FC = () => {
 
             <section>
                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-                <Users className="text-secondary h-6 w-6"/> Full Leaderboard
+                   <Users className="text-secondary h-6 w-6"/> Full Leaderboard
                 </h2>
-                <Card className="shadow-md border rounded-lg overflow-hidden">
-                    <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[70px]">Rank</TableHead>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>City</TableHead>
-                                        <TableHead>Role</TableHead>
-                                        <TableHead className="text-right">Score</TableHead>
-                                        <TableHead className="text-right">Projects</TableHead>
-                                        <TableHead>RAG Status</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {fullLeaderboard.map((entry) => (
-                                        <TableRow key={entry.id}>
-                                            <TableCell className="font-medium">
-                                                <div className="flex items-center gap-1">
-                                                    {entry.rank}
-                                                    <RankChangeIcon change={entry.rankChange} />
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-8 w-8 border">
-                                                        <AvatarImage src={entry.profilePic} alt={entry.name} data-ai-hint="person face"/>
-                                                        <AvatarFallback>{entry.name.substring(0,1)}</AvatarFallback>
-                                                    </Avatar>
-                                                    {entry.name}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell><CityBadge city={entry.city} /></TableCell>
-                                            <TableCell>{entry.role}</TableCell>
-                                            <TableCell className="text-right font-semibold">{entry.score}%</TableCell>
-                                            <TableCell className="text-right">{entry.projectCount ?? 'N/A'}</TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <RAGIndicator status="Green" count={entry.ragStatus.green} size="sm" />
-                                                    <RAGIndicator status="Amber" count={entry.ragStatus.amber} size="sm" />
-                                                    <RAGIndicator status="Red" count={entry.ragStatus.red} size="sm" />
-                                                </div>
-                                            </TableCell>
+                {fullLeaderboard && fullLeaderboard.length > 0 ? (
+                    <Card className="shadow-md border rounded-lg overflow-hidden">
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[70px]">Rank</TableHead>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>City</TableHead>
+                                            <TableHead>Role</TableHead>
+                                            <TableHead className="text-right">Score</TableHead>
+                                            <TableHead className="text-right">Projects</TableHead>
+                                            <TableHead>RAG Status</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {fullLeaderboard.map((entry) => (
+                                            <TableRow key={entry.id}>
+                                                <TableCell className="font-medium">
+                                                    <div className="flex items-center gap-1">
+                                                        {entry.rank}
+                                                        <RankChangeIcon change={entry.rankChange} />
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-8 w-8 border">
+                                                            <AvatarImage src={entry.profilePic} alt={entry.name} data-ai-hint="person face"/>
+                                                            <AvatarFallback>{entry.name.substring(0,1)}</AvatarFallback>
+                                                        </Avatar>
+                                                        {entry.name}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell><CityBadge city={entry.city} /></TableCell>
+                                                <TableCell>{entry.role}</TableCell>
+                                                <TableCell className="text-right font-semibold">{entry.score}%</TableCell>
+                                                <TableCell className="text-right">{entry.projectCount ?? 'N/A'}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <RAGIndicator status="Green" count={entry.ragStatus.green} size="sm" />
+                                                        <RAGIndicator status="Amber" count={entry.ragStatus.amber} size="sm" />
+                                                        <RAGIndicator status="Red" count={entry.ragStatus.red} size="sm" />
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                 ) : (
+                     <Card><CardContent><p className="text-muted-foreground text-center py-6">Full leaderboard data not available.</p></CardContent></Card>
+                 )}
             </section>
+             {error && (
+                <Alert variant="destructive" className="mt-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Partial Data Load Error</AlertTitle>
+                    <AlertDescription>
+                        Some data could not be loaded: {error}. Sections might be incomplete or missing.
+                    </AlertDescription>
+                </Alert>
+            )}
         </motion.div>
     );
 };

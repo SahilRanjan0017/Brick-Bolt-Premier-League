@@ -1,12 +1,13 @@
 // src/services/mockData.ts
-import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, Project, OMTrendData, RAGCounts, Role, DashboardStatsData, DashboardFilters, RecentActivityItem } from '@/types';
+import type { LeaderboardEntry, HistoricalWinner, CityData, RewardDetails, Project, OMTrendData, RAGCounts, Role, DashboardStatsData, DashboardFilters, RecentActivityItem, StatCardData } from '@/types';
+import { ListChecks, CheckCircle2, AlertTriangle, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
 
 // --- Helper Functions ---
 
 const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts => {
     let green = 0, amber = 0, red = 0;
     if (projectCount === 0) return { green: 0, amber: 0, red: 0 };
-    
+
     const baseGreen = Math.floor(projectCount * (score / 100));
     const remaining = projectCount - baseGreen;
 
@@ -19,7 +20,7 @@ const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts
         amber = Math.floor(remaining * 0.6);
         red = projectCount - green - amber;
     } else {
-        green = Math.max(1, baseGreen - Math.floor(remaining * 0.5)); 
+        green = Math.max(1, baseGreen - Math.floor(remaining * 0.5));
         red = Math.floor(remaining * 0.6);
         amber = projectCount - green - red;
     }
@@ -29,15 +30,15 @@ const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts
      const total = green + amber + red;
      if (total !== projectCount) {
         green += (projectCount - total);
-        if (green < 0) { 
+        if (green < 0) {
             amber += green;
             green = 0;
         }
-        if(amber < 0) { 
+        if(amber < 0) {
              red += amber;
              amber = 0;
         }
-        red = Math.max(0, red); 
+        red = Math.max(0, red);
      }
 
 
@@ -46,9 +47,9 @@ const calculateRagCounts = (score: number, projectCount: number = 10): RAGCounts
 
 const getRandomRole = (index: number): Role => {
     const mod = index % 10;
-    if (mod < 1) return 'OM'; 
-    if (mod < 4) return 'TL'; 
-    return 'SPM'; 
+    if (mod < 1) return 'OM';
+    if (mod < 4) return 'TL';
+    return 'SPM';
 };
 
 const assignManager = (role: Role, omList: string[], tlList: string[]): string | undefined => {
@@ -73,7 +74,7 @@ const rawLeaderboard: Omit<LeaderboardEntry, 'rank' | 'ragStatus' | 'manages' | 
         name: `${firstName} ${lastName}`,
         city: cities[i % cities.length],
         score: score,
-        role: getRandomRole(i), 
+        role: getRandomRole(i),
         profilePic: `https://picsum.photos/100/100?random=${i + 1}`
     };
 });
@@ -93,30 +94,30 @@ export const mockLeaderboard: LeaderboardEntry[] = rawLeaderboard.map((entry) =>
 
     if (entry.role === 'OM') {
         manages = {
-            tls: tls.filter(tl => tl.city === entry.city && Math.random() > 0.3).map(tl => tl.id), 
-            spms: spms.filter(spm => spm.city === entry.city && Math.random() > 0.4).map(spm => spm.id) 
+            tls: tls.filter(tl => tl.city === entry.city && Math.random() > 0.3).map(tl => tl.id),
+            spms: spms.filter(spm => spm.city === entry.city && Math.random() > 0.4).map(spm => spm.id)
         };
         projectCount = (manages.tls?.length ?? 0) * 5 + (manages.spms?.length ?? 0) * 2; // OM project count derived
     } else if (entry.role === 'TL') {
-        reportsTo = assignManager(entry.role, omIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city), []); 
+        reportsTo = assignManager(entry.role, omIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city), []);
         projectCount = Math.floor(5 + Math.random() * 6); // TLs manage 5-10 projects
     } else if (entry.role === 'SPM') {
         const cityTLs = tlIds.filter(id => rawLeaderboard.find(e=>e.id === id)?.city === entry.city);
-        reportsTo = assignManager(entry.role, [], cityTLs); 
+        reportsTo = assignManager(entry.role, [], cityTLs);
         projectCount = Math.floor(2 + Math.random() * 4); // SPMs manage 2-5 projects
     }
 
     return {
         ...entry,
-        rank: 0, 
+        rank: 0,
         ragStatus: calculateRagCounts(entry.score, projectCount ?? 0),
         projectCount: projectCount,
         manages: manages,
         reportsTo: reportsTo,
         rankChange: rankChange,
     };
-}).sort((a, b) => b.score - a.score) 
-  .map((entry, index) => ({ ...entry, rank: index + 1 })); 
+}).sort((a, b) => b.score - a.score)
+  .map((entry, index) => ({ ...entry, rank: index + 1 }));
 
 
 // --- Mock Historical Winners ---
@@ -196,7 +197,7 @@ export const mockCityDetails: Record<string, CityData> = cities.reduce((acc, cit
 
     acc[cityId] = {
         id: cityId,
-        name: `City ${cityId.replace('_', ' ')}`, 
+        name: `City ${cityId.replace('_', ' ')}`,
         ragBreakdown: {
             tl: tlRag,
             spm: spmRag,
@@ -206,7 +207,7 @@ export const mockCityDetails: Record<string, CityData> = cities.reduce((acc, cit
             spm: spmProjects,
             total: tlProjects + spmProjects,
         },
-        personnel: cityPersonnel, 
+        personnel: cityPersonnel,
     };
     return acc;
 }, {} as Record<string, CityData>);
@@ -219,21 +220,21 @@ const generateWeeklyScore = (baseScore: number): number => {
 
 export const mockOMTrends: OMTrendData[] = oms.map(om => {
     const weeklyScores = Array.from({ length: 8 }, (_, i) => ({
-        week: 30 - 7 + i, 
+        week: 30 - 7 + i,
         score: generateWeeklyScore(om.score),
     }));
 
     const subordinateRanks = Array.from({ length: 8 }, (_, i) => ({
         week: 30 - 7 + i,
-        tlRank: Math.floor(Math.random() * 10) + 1, 
-        spmRank: Math.floor(Math.random() * 20) + 1, 
+        tlRank: Math.floor(Math.random() * 10) + 1,
+        spmRank: Math.floor(Math.random() * 20) + 1,
     }));
 
     return {
         omId: om.id,
         omName: om.name,
         weeklyScores: weeklyScores,
-        subordinateRanks: subordinateRanks, 
+        subordinateRanks: subordinateRanks,
     };
 });
 
@@ -259,15 +260,15 @@ export const mockRewardDetails: RewardDetails = {
         },
     },
     incentives: {
-        ops: [ 
+        ops: [
             "Metric: Overall Team RAG Score Improvement",
             "Metric: Client Escalation Reduction",
             "Metric: Cross-functional Collaboration",
         ],
         vm: [
-            "Metric A: Vendor Onboarding Time (< 3 days)",
-            "Metric B: Material Quality Score (>98%)",
-            "Metric C: Cost Savings Achieved (>5%)",
+            "Metric A: Vendor Onboarding Time (&lt; 3 days)",
+            "Metric B: Material Quality Score (&gt;98%)",
+            "Metric C: Cost Savings Achieved (&gt;5%)",
         ],
     },
     programs: {
@@ -316,8 +317,7 @@ const mockRecentActivities: RecentActivityItem[] = [
 
 // --- Mock Dashboard Stats Data (Updated for new Dashboard structure) ---
 export const mockDashboardStats = (filters?: DashboardFilters): DashboardStatsData => {
-  // Filters can be used here to modify the returned mockLeaderboard if needed
-  // For now, we return the full mockLeaderboard and mockRecentActivities
+  // Filters can be used here to modify the returned mockLeaderboard if any.
   let filteredLeaderboard = mockLeaderboard;
   if (filters?.city && filters.city !== "pan_india") {
     filteredLeaderboard = mockLeaderboard.filter(p => p.city === filters.city)
@@ -325,8 +325,52 @@ export const mockDashboardStats = (filters?: DashboardFilters): DashboardStatsDa
                              .map((e, i) => ({...e, rank: i + 1}));
   }
 
+  // Logic for stat cards based on filters (role, week) can be added here.
+  // For now, returning static values that match the image.
+  const activeProjectsValue = filters?.role === 'OM' ? 300 : filters?.role === 'TL' ? 200 : 625;
+  const greenProjectsValue = filters?.role === 'OM' ? 120 : filters?.role === 'TL' ? 80 : 248;
+  const amberProjectsValue = filters?.role === 'OM' ? 70 : filters?.role === 'TL' ? 50 : 150;
+  const redProjectsValue = filters?.role === 'OM' ? 110 : filters?.role === 'TL' ? 70 : 227;
+
 
   return {
+    activeProjects: {
+        title: "Active Projects",
+        value: activeProjectsValue,
+        trend: `+${Math.floor(activeProjectsValue * 0.02)} from last month`,
+        trendDirection: 'up',
+        icon: ListChecks,
+        iconBgColor: 'bg-blue-100 dark:bg-blue-900/50',
+        iconTextColor: 'text-blue-600 dark:text-blue-400',
+    },
+    greenProjects: {
+        title: "Green Projects",
+        value: greenProjectsValue,
+        percentage: `${Math.round((greenProjectsValue / activeProjectsValue) * 100)}% of total`,
+        trendDirection: 'neutral', // Or 'up' if there's a trend
+        icon: CheckCircle2,
+        iconBgColor: 'bg-green-100 dark:bg-green-900/50',
+        iconTextColor: 'text-green-600 dark:text-green-400',
+    },
+    amberProjects: {
+        title: "Amber Projects",
+        value: amberProjectsValue,
+        percentage: `${Math.round((amberProjectsValue / activeProjectsValue) * 100)}% of total`,
+        trendDirection: 'neutral',
+        icon: AlertTriangle,
+        iconBgColor: 'bg-yellow-100 dark:bg-yellow-900/50',
+        iconTextColor: 'text-yellow-600 dark:text-yellow-400',
+    },
+    redProjects: {
+        title: "Red Projects",
+        value: redProjectsValue,
+        trend: `-${Math.floor(redProjectsValue * 0.01)} from last month`,
+        trendDirection: 'down',
+        percentage: `${Math.round((redProjectsValue / activeProjectsValue) * 100)}% of total`,
+        icon: XCircle,
+        iconBgColor: 'bg-red-100 dark:bg-red-900/50',
+        iconTextColor: 'text-red-600 dark:text-red-400',
+    },
     leaderboard: filteredLeaderboard,
     recentActivities: mockRecentActivities,
   };

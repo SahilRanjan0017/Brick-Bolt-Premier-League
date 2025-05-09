@@ -1,4 +1,5 @@
 // src/types/index.ts
+import type React from 'react';
 
 // Role Type
 export type Role = 'OM' | 'TL' | 'SPM' | string; // Operations Manager, Team Lead, Senior Project Manager
@@ -14,21 +15,21 @@ export interface RAGCounts {
 
 // Leaderboard Entry Type
 export interface LeaderboardEntry {
-    id: string; 
+    id: string;
     rank: number;
-    rankChange?: number; 
+    rankChange?: number;
     name: string;
-    role: Role; 
-    city: string; 
-    score: number; 
-    projectCount?: number; 
-    ragStatus: RAGCounts; 
-    profilePic?: string; 
+    role: Role;
+    city: string;
+    score: number;
+    projectCount?: number;
+    ragStatus: RAGCounts;
+    profilePic?: string;
     manages?: {
-        tls?: string[]; 
-        spms?: string[]; 
+        tls?: string[];
+        spms?: string[];
     }
-    reportsTo?: string; 
+    reportsTo?: string;
 }
 
 // Historical Winner Type
@@ -43,20 +44,20 @@ export interface HistoricalWinner {
 export interface Project {
     id: string;
     name: string;
-    runRate: number; 
-    lastUpdated: string; 
+    runRate: number;
+    lastUpdated: string;
     ragStatus: RagStatus;
-    managedBy: string; 
-    managerRole: 'TL' | 'SPM'; 
+    managedBy: string;
+    managerRole: 'TL' | 'SPM';
 }
 
-// City Data Type (for City View) 
+// City Data Type (for City View)
 export interface CityData {
-    id: string; 
-    name: string; 
+    id: string;
+    name: string;
     performanceHistory?: {
         week: number;
-        runRate: number; 
+        runRate: number;
     }[];
     ragBreakdown: {
         tl: RAGCounts;
@@ -74,11 +75,11 @@ export interface CityData {
 export interface OMTrendData {
     omId: string;
     omName: string;
-    weeklyScores: { week: number; score: number }[]; 
-    subordinateRanks?: { 
+    weeklyScores: { week: number; score: number }[];
+    subordinateRanks?: {
         week: number;
-        tlRank?: number; 
-        spmRank?: number; 
+        tlRank?: number;
+        spmRank?: number;
     }[];
 }
 
@@ -86,21 +87,21 @@ export interface OMTrendData {
 // Reward Details Type
 export interface RewardAward {
     title: string;
-    awardeeId: string | null; 
+    awardeeId: string | null;
 }
 
 export interface RewardDetails {
     awards: {
-        employeeOfMonth: RewardAward; 
-        cityChampion: RewardAward; 
-        innovationAward: RewardAward; 
+        employeeOfMonth: RewardAward;
+        cityChampion: RewardAward;
+        innovationAward: RewardAward;
     };
     incentives: {
-        ops: string[]; 
-        vm: string[]; 
+        ops: string[];
+        vm: string[];
     };
     programs: {
-        quarterlyAwards: string; 
+        quarterlyAwards: string;
         annualConference: string;
     };
 }
@@ -115,11 +116,13 @@ export interface LeaderboardPageData {
     };
     omTrends: OMTrendData[];
     fullLeaderboard: LeaderboardEntry[];
-    historicalWinners: HistoricalWinner[]; 
+    historicalWinners: HistoricalWinner[];
     // Added to support duplicated historical winners per role
     historicalWinnersOM: HistoricalWinner[];
     historicalWinnersTL: HistoricalWinner[];
     historicalWinnersSPM: HistoricalWinner[];
+    // Data for the Performance Scoreboard section, now on Leaderboard page
+    dashboardStats?: DashboardStatsData; // Optional because it's specific to the new section
 }
 
 export interface CityViewsPageData {
@@ -127,11 +130,17 @@ export interface CityViewsPageData {
 }
 
 // --- New Dashboard Types ---
-export interface StatCardData { // This might be deprecated or reused differently
+
+// Updated StatCardData to be self-contained for rendering
+export interface StatCardData {
+    title: string;
     value: string | number;
-    trend?: string; 
+    trend?: string;
     trendDirection?: 'up' | 'down' | 'neutral';
-    percentage?: string; 
+    percentage?: string;
+    icon: React.ElementType; // Lucide icon component
+    iconBgColor?: string; // e.g., 'bg-green-100 dark:bg-green-900/50'
+    iconTextColor?: string; // e.g., 'text-green-600 dark:text-green-300'
 }
 
 export interface RecentActivityItem {
@@ -148,17 +157,17 @@ export interface RecentActivityItem {
 
 
 export interface DashboardStatsData {
-    // activeProjects: StatCardData; // Old stat cards, replaced by new layout
-    // greenProjects: StatCardData;
-    // amberProjects: StatCardData;
-    // redProjects: StatCardData;
-    leaderboard: LeaderboardEntry[]; // For the BPL Leaderboard table
-    recentActivities: RecentActivityItem[]; // For the Recent Activity card
+    activeProjects: StatCardData;
+    greenProjects: StatCardData;
+    amberProjects: StatCardData;
+    redProjects: StatCardData;
+    leaderboard: LeaderboardEntry[];
+    recentActivities: RecentActivityItem[];
 }
 
 // For API call parameters to getDashboardStats
 export interface DashboardFilters {
     city?: string;
-    // role?: string; // Role filtering will be client-side on the dashboard for the table
-    // time?: string; 
+    role?: Role; // Added role for scoreboard filtering
+    week?: string; // Added week for scoreboard filtering
 }
