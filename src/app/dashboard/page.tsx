@@ -5,11 +5,12 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, ListChecks, CheckCircle2, AlertTriangle, XCircle, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart3, ListChecks, CheckCircle2, AlertTriangle, XCircle, TrendingUp, TrendingDown } from 'lucide-react'; // Removed ChevronDown as it's not used
 import { getDashboardStats } from '@/services/api'; // Assuming API function
 import type { DashboardStatsData, StatCardData } from '@/types'; // Assuming types
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils'; // Import cn utility
 
 interface StatCardProps {
   title: string;
