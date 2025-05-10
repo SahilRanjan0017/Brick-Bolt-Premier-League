@@ -13,6 +13,9 @@ import { Download, Filter, Database, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+const ALL_CITIES_OPTION_VALUE = "__all_cities__";
+const ALL_RAG_PROFILES_OPTION_VALUE = "__all_rag_profiles__";
+
 const PerformanceDataPage: React.FC = () => {
   const [allData, setAllData] = useState<PerformanceDataEntry[]>([]); // Store all data for the initially fetched date
   const [filteredData, setFilteredData] = useState<PerformanceDataEntry[]>([]); // Data to display after client-side filtering
@@ -21,8 +24,8 @@ const PerformanceDataPage: React.FC = () => {
   
   const today = new Date().toISOString().split('T')[0];
   const [dateFilter, setDateFilter] = useState<string>(today);
-  const [cityFilter, setCityFilter] = useState<string>('');
-  const [ragFilter, setRagFilter] = useState<string>('');
+  const [cityFilter, setCityFilter] = useState<string>(''); // Empty string means "All Cities"
+  const [ragFilter, setRagFilter] = useState<string>(''); // Empty string means "All RAG Profiles"
 
   // Fetch data only when dateFilter changes
   const fetchDataForDate = useCallback(async (selectedDate: string) => {
@@ -60,22 +63,22 @@ const PerformanceDataPage: React.FC = () => {
   // Apply client-side filters
   useEffect(() => {
     let currentData = [...allData];
-    if (cityFilter) {
+    if (cityFilter) { // Non-empty cityFilter means a specific city is selected
       currentData = currentData.filter(item => item.city === cityFilter);
     }
-    if (ragFilter) {
+    if (ragFilter) { // Non-empty ragFilter means a specific RAG profile is selected
       currentData = currentData.filter(item => item.rag_profile === ragFilter);
     }
     setFilteredData(currentData);
   }, [allData, cityFilter, ragFilter]);
 
   const uniqueCities = useMemo(() => {
-    const cities = new Set(allData.map(item => item.city));
+    const cities = new Set(allData.map(item => item.city).filter(city => city && city.trim() !== ""));
     return Array.from(cities).sort();
   }, [allData]);
 
   const uniqueRagProfiles = useMemo(() => {
-    const profiles = new Set(allData.map(item => item.rag_profile));
+    const profiles = new Set(allData.map(item => item.rag_profile).filter(profile => profile && profile.trim() !== ""));
     return Array.from(profiles).sort();
   }, [allData]);
 
@@ -135,12 +138,22 @@ const PerformanceDataPage: React.FC = () => {
           </div>
           <div>
             <label htmlFor="city-filter" className="block text-sm font-medium text-muted-foreground mb-1">Filter by City</label>
-            <Select value={cityFilter} onValueChange={setCityFilter} disabled={isLoading || allData.length === 0}>
+            <Select 
+              value={cityFilter} // Parent Select value is the actual filter state
+              onValueChange={(selectedValue) => {
+                if (selectedValue === ALL_CITIES_OPTION_VALUE) {
+                  setCityFilter(''); // Set actual filter to empty for "All"
+                } else {
+                  setCityFilter(selectedValue);
+                }
+              }} 
+              disabled={isLoading || allData.length === 0}
+            >
               <SelectTrigger id="city-filter" className="bg-background">
-                <SelectValue placeholder="All Cities" />
+                <SelectValue placeholder="All Cities" /> 
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Cities</SelectItem>
+                <SelectItem value={ALL_CITIES_OPTION_VALUE}>All Cities</SelectItem>
                 {uniqueCities.map(city => (
                   <SelectItem key={city} value={city}>{city}</SelectItem>
                 ))}
@@ -149,12 +162,22 @@ const PerformanceDataPage: React.FC = () => {
           </div>
           <div>
             <label htmlFor="rag-filter" className="block text-sm font-medium text-muted-foreground mb-1">Filter by RAG Profile</label>
-            <Select value={ragFilter} onValueChange={setRagFilter} disabled={isLoading || allData.length === 0}>
+            <Select 
+              value={ragFilter} // Parent Select value is the actual filter state
+              onValueChange={(selectedValue) => {
+                if (selectedValue === ALL_RAG_PROFILES_OPTION_VALUE) {
+                  setRagFilter(''); // Set actual filter to empty for "All"
+                } else {
+                  setRagFilter(selectedValue);
+                }
+              }} 
+              disabled={isLoading || allData.length === 0}
+            >
               <SelectTrigger id="rag-filter" className="bg-background">
                 <SelectValue placeholder="All RAG Profiles" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All RAG Profiles</SelectItem>
+                <SelectItem value={ALL_RAG_PROFILES_OPTION_VALUE}>All RAG Profiles</SelectItem>
                  {uniqueRagProfiles.map(profile => (
                   <SelectItem key={profile} value={profile}>{profile}</SelectItem>
                 ))}
@@ -206,8 +229,8 @@ const PerformanceDataPage: React.FC = () => {
                       <TableCell>{item.city}</TableCell>
                       <TableCell>{item.tl_name}</TableCell>
                       <TableCell>{item.spm_name}</TableCell>
-                      <TableCell className="text-right">{item.avg_bnb_csat.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{item.total_delay_days}</TableCell>
+                      <TableCell className="text-right">{item.avg_bnb_csat !== null && item.avg_bnb_csat !== undefined ? item.avg_bnb_csat.toFixed(2) : 'N/A'}</TableCell>
+                      <TableCell className="text-right">{item.total_delay_days !== null && item.total_delay_days !== undefined ? item.total_delay_days : 'N/A'}</TableCell>
                       <TableCell>{item.rag_profile}</TableCell>
                       <TableCell>{item.record_date}</TableCell>
                     </TableRow>
