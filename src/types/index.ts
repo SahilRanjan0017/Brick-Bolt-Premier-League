@@ -168,6 +168,19 @@ export interface DashboardStatsData {
 // For API call parameters to getDashboardStats
 export interface DashboardFilters {
     city?: string;
-    role?: Role; // Added role for scoreboard filtering
+    role?: Role | 'All Roles'; // Allow "All Roles" for scoreboard filtering
     week?: string; // Added week for scoreboard filtering
+}
+
+// --- Performance Data from Google Sheets ---
+export interface PerformanceDataEntry {
+  id: number; // Auto-incrementing primary key from Supabase
+  crn_id: string;
+  city: string;
+  tl_name: string;
+  spm_name: string;
+  avg_bnb_csat: number;
+  total_delay_days: number;
+  rag_profile: string;
+  record_date: string; // "YYYY-MM-DD"
 }

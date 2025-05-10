@@ -16,7 +16,6 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      // Example: replace with your actual table definitions
       leaderboard_entries: {
         Row: {
           id: string
@@ -28,7 +27,6 @@ export interface Database {
           project_count?: number | null
           profile_pic?: string | null
           rank_change?: number | null
-          // Add other columns from your 'leaderboard_entries' table
         }
         Insert: {
           id?: string
@@ -169,7 +167,45 @@ export interface Database {
           };
           Relationships: []
       }
-      // Define other tables like 'projects', 'cities' if you have them
+      performance_data: {
+        Row: {
+          id: number
+          crn_id: string
+          city: string
+          tl_name: string
+          spm_name: string
+          avg_bnb_csat: number
+          total_delay_days: number
+          rag_profile: string
+          record_date: string // Date as "YYYY-MM-DD"
+          created_at: string 
+        }
+        Insert: {
+          id?: number
+          crn_id: string
+          city: string
+          tl_name: string
+          spm_name: string
+          avg_bnb_csat: number
+          total_delay_days: number
+          rag_profile: string
+          record_date: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          crn_id?: string
+          city?: string
+          tl_name?: string
+          spm_name?: string
+          avg_bnb_csat?: number
+          total_delay_days?: number
+          rag_profile?: string
+          record_date?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       // Define your views here

@@ -5,14 +5,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Target, Menu, X, Trophy, LayoutDashboard, ListChecks, ScrollText } from 'lucide-react'; // Added Target, LayoutDashboard, ScrollText
+import { Target, Menu, X, Trophy, LayoutDashboard, ListChecks, ScrollText, Database, Building2, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Updated navItems based on the image
+// Updated navItems based on the user's general app description and new page
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/leaderboard', label: 'Leaderboard', icon: ListChecks },
+  { href: '/city-views', label: 'City Views', icon: Building2 },
+  { href: '/rewards', label: 'Rewards', icon: Gift },
+  { href: '/performance-data', label: 'Performance Log', icon: Database },
   { href: '/rules', label: 'Rules', icon: ScrollText },
+  // Note: Incentive-Ops and Incentive-VM are not currently top-level nav items here.
+  // If they are sub-navigation, that would be handled differently (e.g., dropdown).
 ];
 
 const Header: React.FC = () => {
@@ -28,39 +33,37 @@ const Header: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const isActive = (href: string) => pathname === href || (href !== '/' && pathname.startsWith(href));
+  const isActive = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
 
   return (
     <header
       className={cn(
         "sticky top-0 z-50 w-full border-b transition-shadow duration-300",
         isScrolled ? "shadow-lg" : "shadow-none",
-        // Applying gradient from CSS variables
-        "bg-gradient-to-r from-[hsl(var(--header-gradient-start))] to-[hsl(var(--header-gradient-end))] text-primary-foreground border-transparent"
+        "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-primary-foreground border-transparent" // Updated gradient to match proposal
       )}
     >
       <div className="container mx-auto flex h-20 items-center px-4">
-        {/* Logo and Title */}
         <Link href="/dashboard" className="mr-6 flex items-center space-x-3 flex-shrink-0">
-          <Target className="h-10 w-10 text-primary-foreground" /> {/* Updated Icon */}
+          <Trophy className="h-10 w-10 text-primary-foreground" /> {/* Main Logo Icon: Trophy */}
           <div>
-            <span className="font-bold text-xl whitespace-nowrap">Brick & Bolt Premier League</span>
-            <p className="text-xs text-primary-foreground/80 whitespace-nowrap">Construction Champions 2025</p>
+            <span className="font-bold text-xl whitespace-nowrap">Brick & Bolt Vista</span> {/* App Name */}
+            <p className="text-xs text-primary-foreground/80 whitespace-nowrap">Performance Dashboard</p>
           </div>
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-1 flex-grow">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href} passHref>
               <Button
                 variant="ghost"
                 className={cn(
-                  "text-sm font-medium transition-colors hover:bg-white/10 focus-visible:ring-white/50 py-2 px-3 rounded-md",
-                  isActive(item.href) ? 'bg-secondary text-secondary-foreground shadow-md' : 'text-primary-foreground/90 hover:text-primary-foreground',
+                  "text-sm font-medium transition-colors hover:bg-primary-foreground/10 focus-visible:ring-primary-foreground/50 py-2 px-3 rounded-md",
+                  isActive(item.href) ? 'bg-primary-foreground/20 text-primary-foreground shadow-sm' : 'text-primary-foreground/90 hover:text-primary-foreground',
                 )}
                 aria-current={isActive(item.href) ? 'page' : undefined}
               >
+                <item.icon className="mr-2 h-4 w-4" />
                 {item.label}
               </Button>
             </Link>
@@ -68,33 +71,30 @@ const Header: React.FC = () => {
         </nav>
 
         {/* Season Button - Pushed to the right */}
-        <div className="hidden md:flex ml-auto items-center">
-            <Button
-              variant="default"
-              className="bg-gradient-to-r from-[hsl(var(--season-button-gradient-start))] to-[hsl(var(--season-button-gradient-end))] text-accent-foreground hover:opacity-90 transition-opacity shadow-md px-4 py-2"
+         <div className="hidden md:flex ml-auto items-center">
+             <Button
+              variant="secondary" // Using secondary for a different look from nav items
+              className="bg-teal-600 hover:bg-teal-700 text-white shadow-md px-4 py-2" // Teal accent color
             >
-              <Trophy className="mr-2 h-4 w-4" />
-              SEASON 1 - MAY 2025
+              SEASON 1 - 2025
             </Button>
         </div>
 
 
-        {/* Mobile Menu Trigger */}
         <div className="ml-auto md:hidden">
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="hover:bg-white/20 focus-visible:ring-white/50 text-primary-foreground">
+              <Button variant="ghost" size="icon" className="hover:bg-primary-foreground/20 focus-visible:ring-primary-foreground/50 text-primary-foreground">
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px] bg-background p-0 text-foreground">
               <div className="flex h-full flex-col">
-                  {/* Mobile Menu Header */}
                   <div className="flex items-center justify-between p-4 border-b bg-muted/40">
                       <Link href="/dashboard" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Target className="h-6 w-6 text-primary" />
-                        <span className="font-bold text-lg">B&B Premier League</span>
+                        <Trophy className="h-6 w-6 text-primary" />
+                        <span className="font-bold text-lg">B&B Vista</span>
                       </Link>
                        <SheetTrigger asChild>
                           <Button variant="ghost" size="icon" className="-mr-2">
@@ -104,7 +104,6 @@ const Header: React.FC = () => {
                         </SheetTrigger>
                   </div>
 
-                  {/* Mobile Navigation Links */}
                   <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
                    {navItems.map((item) => (
                       <Link key={item.href} href={item.href} passHref>
@@ -122,18 +121,13 @@ const Header: React.FC = () => {
                         </Button>
                       </Link>
                     ))}
-                    {/* Season button in mobile */}
                     <div className="pt-4 mt-4 border-t">
                        <Button
-                        variant="default"
-                        className="w-full bg-gradient-to-r from-[hsl(var(--season-button-gradient-start))] to-[hsl(var(--season-button-gradient-end))] text-accent-foreground hover:opacity-90 transition-opacity shadow-md"
-                        onClick={() => {
-                            // Potentially navigate or just close menu
-                            setIsMobileMenuOpen(false);
-                        }}
+                        variant="default" // Or secondary, depending on desired emphasis
+                        className="w-full bg-teal-600 hover:bg-teal-700 text-white shadow-md"
+                        onClick={() => setIsMobileMenuOpen(false)}
                       >
-                        <Trophy className="mr-2 h-4 w-4" />
-                        SEASON 1 - MAY 2025
+                        SEASON 1 - 2025
                       </Button>
                     </div>
                   </nav>
@@ -141,7 +135,6 @@ const Header: React.FC = () => {
             </SheetContent>
           </Sheet>
         </div>
-
       </div>
     </header>
   );
