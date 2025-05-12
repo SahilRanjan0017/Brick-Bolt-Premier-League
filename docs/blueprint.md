@@ -1,4 +1,4 @@
-# **App Name**: Brick & Bolt Vista
+# **App Name**: Brick & Bolt Premier League
 
 ## Core Features:
 

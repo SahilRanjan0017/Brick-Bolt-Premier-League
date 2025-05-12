@@ -16,7 +16,7 @@ const lexend = Lexend({
 
 export const metadata: Metadata = {
   title: 'Brick & Bolt Premier League',
-  description: 'Performance Dashboard for Brick & Bolt',
+  description: 'Construction Champions 2025 for Brick & Bolt',
 };
 
 export default function RootLayout({

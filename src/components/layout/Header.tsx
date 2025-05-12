@@ -47,8 +47,8 @@ const Header: React.FC = () => {
         <Link href="/dashboard" className="mr-6 flex items-center space-x-3 flex-shrink-0">
           <Trophy className="h-10 w-10 text-primary-foreground" /> {/* Main Logo Icon: Trophy */}
           <div>
-            <span className="font-bold text-xl whitespace-nowrap">Brick & Bolt Vista</span> {/* App Name */}
-            <p className="text-xs text-primary-foreground/80 whitespace-nowrap">Performance Dashboard</p>
+            <span className="font-bold text-xl whitespace-nowrap">Brick & Bolt Premier League</span> {/* App Name */}
+            <p className="text-xs text-primary-foreground/80 whitespace-nowrap">Construction Champions 2025</p>
           </div>
         </Link>
 
