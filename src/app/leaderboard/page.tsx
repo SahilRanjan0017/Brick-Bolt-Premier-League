@@ -329,16 +329,6 @@ const LeaderboardPage: React.FC = () => {
                                         <SelectItem value="SPM">SPM</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <Select value={selectedScoreboardWeek} onValueChange={setSelectedScoreboardWeek}>
-                                    <SelectTrigger className="w-full sm:w-[160px] bg-card">
-                                        <SelectValue placeholder="This Week" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="This Week">This Week</SelectItem>
-                                        <SelectItem value="Last Week">Last Week</SelectItem>
-                                        <SelectItem value="Last Month">Last Month</SelectItem>
-                                    </SelectContent>
-                                </Select>
                             </div>
                         </div>
                     </CardHeader>
